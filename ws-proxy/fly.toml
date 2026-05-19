@@ -1,10 +1,10 @@
-# fly.toml app configuration file generated for pred-market on 2026-05-19T16:09:27Z
+# fly.toml app configuration file generated for pred-market on 2026-05-19T16:25:42Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
 app = 'pred-market'
-primary_region = 'ams'
+primary_region = 'ewr'
 
 [build]
 
