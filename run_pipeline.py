@@ -19,6 +19,7 @@ DATA_DIR = os.path.join("web", "public", "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 run_with_retry([sys.executable, "pmxt_matcher.py"])
+run_with_retry([sys.executable, "matcher.py"])
 run_with_retry([sys.executable, "arbitrage.py"])
 
 def csv_to_json(src, dst, numeric_fields):
