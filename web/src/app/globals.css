@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+/* ── Design tokens ─────────────────────────────────────────── */
+:root {
+  /* Dark mode is default */
+  --bg:              oklch(10% 0.008 248);
+  --bg-subtle:       oklch(13% 0.009 248);
+  --surface:         oklch(15% 0.009 248);
+  --surface-hover:   oklch(18% 0.009 248);
+  --border:          oklch(22% 0.010 248);
+  --border-subtle:   oklch(18% 0.009 248);
+  --text-primary:    oklch(94% 0.006 248);
+  --text-secondary:  oklch(62% 0.012 248);
+  --text-muted:      oklch(40% 0.010 248);
+
+  --poly-blue:       #1652F0;
+  --poly-blue-soft:  oklch(60% 0.18 264);
+  --kalshi-teal:     #00B3A1;
+  --kalshi-soft:     oklch(65% 0.14 185);
+  --arb-amber:       oklch(78% 0.16 70);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+.dark {
+  --bg:              oklch(10% 0.008 248);
+  --bg-subtle:       oklch(13% 0.009 248);
+  --surface:         oklch(15% 0.009 248);
+  --surface-hover:   oklch(18% 0.009 248);
+  --border:          oklch(22% 0.010 248);
+  --border-subtle:   oklch(18% 0.009 248);
+  --text-primary:    oklch(94% 0.006 248);
+  --text-secondary:  oklch(62% 0.012 248);
+  --text-muted:      oklch(40% 0.010 248);
+}
+
+:root:not(.dark) {
+  --bg:              oklch(97.5% 0.005 248);
+  --bg-subtle:       oklch(95% 0.006 248);
+  --surface:         oklch(100% 0.003 248);
+  --surface-hover:   oklch(96% 0.006 248);
+  --border:          oklch(88% 0.008 248);
+  --border-subtle:   oklch(91% 0.006 248);
+  --text-primary:    oklch(14% 0.012 248);
+  --text-secondary:  oklch(42% 0.012 248);
+  --text-muted:      oklch(60% 0.010 248);
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text-primary);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ── Base ──────────────────────────────────────────────────── */
+html { color-scheme: dark; }
+html:not(.dark) { color-scheme: light; }
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+/* ── Utilities ─────────────────────────────────────────────── */
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.surface-subtle {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.live-dot { animation: pulse-slow 2s ease-in-out infinite; }
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.marquee-track { animation: marquee 30s linear infinite; }
+
+@keyframes float-a {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-10px) rotate(2deg); }
+}
+@keyframes float-b {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-14px) rotate(-2deg); }
+}
+
+.float-a { animation: float-a 5s ease-in-out infinite; }
+.float-b { animation: float-b 6.5s ease-in-out infinite; }
+
+/* ── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-subtle); }
+
+table { border-collapse: collapse; }
