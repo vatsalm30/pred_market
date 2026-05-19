@@ -45,7 +45,7 @@ async function fetchMarketTickers(): Promise<string[]> {
   if (!MARKET_DATA_URL) return [];
   try {
     const res = await fetch(MARKET_DATA_URL);
-    const rows: Array<{ kalshi_market_id: string }> = await res.json();
+    const rows = (await res.json()) as Array<{ kalshi_market_id: string }>;
     const tickers = [...new Set(rows.map((r) => r.kalshi_market_id))].filter(Boolean);
     console.log(`Loaded ${tickers.length} Kalshi tickers from ${MARKET_DATA_URL}`);
     return tickers;
