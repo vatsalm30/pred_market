@@ -3,9 +3,10 @@
 import { useEffect, useState, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Zap, Search, Filter, TrendingUp, ArrowUpRight, Info, ExternalLink } from "lucide-react";
+import { Zap, Search, Filter, ArrowUpRight, Info, ExternalLink, Radio } from "lucide-react";
 import { fetchArbitrageOpportunities, type ArbitrageOpportunity, categoryFromEvent } from "@/lib/csv";
 import { PolymarketLogo, KalshiLogo } from "@/components/PlatformLogos";
+import { useLivePrices } from "@/hooks/useLivePrices";
 
 const CATEGORY_COLORS: Record<string, string> = {
   Politics:  "text-blue-500  dark:text-blue-400  bg-blue-500/8   border-blue-500/20",
@@ -28,7 +29,50 @@ function ProfitBadge({ pct }: { pct: number }) {
   );
 }
 
-function DesktopRow({ opp }: { opp: ArbitrageOpportunity }) {
+function PriceCell({
+  snapshotAsk,
+  liveAsk,
+  leg,
+  platform,
+}: {
+  snapshotAsk: number;
+  liveAsk?: number;
+  leg: string;
+  platform: "kalshi" | "poly";
+}) {
+  const isKalshi = platform === "kalshi";
+  const isYes = leg === "YES";
+  const displayAsk = liveAsk ?? snapshotAsk;
+  const hasLive = liveAsk !== undefined;
+
+  const legClass = isKalshi
+    ? isYes ? "bg-teal-500/10 text-[--kalshi-teal]" : "bg-red-500/10 text-red-400"
+    : isYes ? "bg-blue-500/10 text-[#1652F0] dark:text-[#5b8df8]" : "bg-orange-500/10 text-orange-400";
+
+  const priceClass = isKalshi ? "text-[--kalshi-teal]" : "text-[#1652F0] dark:text-[#5b8df8]";
+
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <span className={`text-xs font-mono font-semibold px-2 py-0.5 rounded ${legClass}`}>
+        {isKalshi ? "Kalshi" : "Poly"} {leg}
+      </span>
+      <span className={`text-xs font-mono ${hasLive ? priceClass + " font-semibold" : "text-[--text-muted]"}`}>
+        {(displayAsk * 100).toFixed(1)}¢
+        {hasLive && <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 live-dot align-middle" />}
+      </span>
+    </div>
+  );
+}
+
+function DesktopRow({
+  opp,
+  liveKalshiAsk,
+  livePolyAsk,
+}: {
+  opp: ArbitrageOpportunity;
+  liveKalshiAsk?: number;
+  livePolyAsk?: number;
+}) {
   const category = categoryFromEvent(opp.poly_event);
   return (
     <tr className="border-b border-[--border-subtle] hover:bg-[--surface-hover] transition-colors group">
@@ -42,20 +86,10 @@ function DesktopRow({ opp }: { opp: ArbitrageOpportunity }) {
         </span>
       </td>
       <td className="px-4 py-4 text-center">
-        <div className="flex flex-col items-center gap-0.5">
-          <span className={`text-xs font-mono font-semibold px-2 py-0.5 rounded ${opp.kalshi_leg === "YES" ? "bg-teal-500/10 text-[--kalshi-teal]" : "bg-red-500/10 text-red-400"}`}>
-            Kalshi {opp.kalshi_leg}
-          </span>
-          <span className="text-[--text-muted] text-xs font-mono">{(opp.kalshi_ask * 100).toFixed(1)}¢</span>
-        </div>
+        <PriceCell snapshotAsk={opp.kalshi_ask} liveAsk={liveKalshiAsk} leg={opp.kalshi_leg} platform="kalshi" />
       </td>
       <td className="px-4 py-4 text-center">
-        <div className="flex flex-col items-center gap-0.5">
-          <span className={`text-xs font-mono font-semibold px-2 py-0.5 rounded ${opp.poly_leg === "YES" ? "bg-blue-500/10 text-[#1652F0] dark:text-[#5b8df8]" : "bg-orange-500/10 text-orange-400"}`}>
-            Poly {opp.poly_leg}
-          </span>
-          <span className="text-[--text-muted] text-xs font-mono">{(opp.poly_ask * 100).toFixed(1)}¢</span>
-        </div>
+        <PriceCell snapshotAsk={opp.poly_ask} liveAsk={livePolyAsk} leg={opp.poly_leg} platform="poly" />
       </td>
       <td className="px-4 py-4 text-center">
         <span className="text-[--arb-amber] font-mono text-sm font-semibold">
@@ -79,7 +113,15 @@ function DesktopRow({ opp }: { opp: ArbitrageOpportunity }) {
   );
 }
 
-function MobileCard({ opp }: { opp: ArbitrageOpportunity }) {
+function MobileCard({
+  opp,
+  liveKalshiAsk,
+  livePolyAsk,
+}: {
+  opp: ArbitrageOpportunity;
+  liveKalshiAsk?: number;
+  livePolyAsk?: number;
+}) {
   const category = categoryFromEvent(opp.poly_event);
   return (
     <div className="surface rounded-xl p-4">
@@ -99,14 +141,20 @@ function MobileCard({ opp }: { opp: ArbitrageOpportunity }) {
             <PolymarketLogo size={12} />
             <span className="text-[--text-muted] text-xs">{opp.poly_leg}</span>
           </div>
-          <div className="text-[#1652F0] dark:text-[#5b8df8] font-mono font-semibold text-sm">{(opp.poly_ask * 100).toFixed(1)}¢</div>
+          <div className="text-[#1652F0] dark:text-[#5b8df8] font-mono font-semibold text-sm">
+            {((livePolyAsk ?? opp.poly_ask) * 100).toFixed(1)}¢
+            {livePolyAsk !== undefined && <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 live-dot align-middle" />}
+          </div>
         </div>
         <div className="bg-[--bg-subtle] rounded-lg p-2.5">
           <div className="flex items-center gap-1 mb-1">
             <KalshiLogo size={12} />
             <span className="text-[--text-muted] text-xs">{opp.kalshi_leg}</span>
           </div>
-          <div className="text-[--kalshi-teal] font-mono font-semibold text-sm">{(opp.kalshi_ask * 100).toFixed(1)}¢</div>
+          <div className="text-[--kalshi-teal] font-mono font-semibold text-sm">
+            {((liveKalshiAsk ?? opp.kalshi_ask) * 100).toFixed(1)}¢
+            {liveKalshiAsk !== undefined && <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 live-dot align-middle" />}
+          </div>
         </div>
       </div>
       <div className="flex items-center justify-between">
@@ -138,6 +186,10 @@ function ArbitrageContent() {
   useEffect(() => {
     fetchArbitrageOpportunities().then((d) => { setOpps(d); setLoading(false); });
   }, []);
+
+  const kalshiTickers = useMemo(() => [...new Set(opps.map((o) => o.kalshi_market_id))], [opps]);
+  const polyIds = useMemo(() => [...new Set(opps.map((o) => o.poly_market_id))], [opps]);
+  const { kalshi: liveKalshi, poly: livePoly, connected: liveConnected } = useLivePrices(kalshiTickers, polyIds);
 
   const filtered = useMemo(
     () =>
@@ -186,11 +238,24 @@ function ArbitrageContent() {
           </div>
         </div>
 
-        <div className="flex items-start gap-2.5 bg-[--arb-amber]/5 border border-[--arb-amber]/15 rounded-xl px-4 py-3 max-w-2xl">
-          <Info className="w-4 h-4 text-[--arb-amber] shrink-0 mt-0.5" />
-          <p className="text-[--text-secondary] text-xs leading-relaxed">
-            Snapshot data only. Prices change fast and gaps close. Verify on both platforms before acting. Not financial advice.
-          </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-start gap-2.5 bg-[--arb-amber]/5 border border-[--arb-amber]/15 rounded-xl px-4 py-3 max-w-2xl">
+            <Info className="w-4 h-4 text-[--arb-amber] shrink-0 mt-0.5" />
+            <p className="text-[--text-secondary] text-xs leading-relaxed">
+              Prices change fast and gaps close. Verify on both platforms before acting. Not financial advice.
+            </p>
+          </div>
+          {liveConnected ? (
+            <span className="flex items-center gap-1.5 text-xs text-emerald-500 font-medium">
+              <Radio className="w-3.5 h-3.5" />
+              Kalshi live
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 text-xs text-[--text-muted]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[--text-muted]" />
+              30-min snapshot
+            </span>
+          )}
         </div>
       </div>
 
@@ -296,7 +361,14 @@ function ArbitrageContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((opp, i) => <DesktopRow key={i} opp={opp} />)}
+                  {filtered.map((opp, i) => (
+                    <DesktopRow
+                      key={i}
+                      opp={opp}
+                      liveKalshiAsk={liveKalshi.get(opp.kalshi_market_id)?.yes_ask}
+                      livePolyAsk={livePoly.get(opp.poly_market_id)}
+                    />
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -304,7 +376,14 @@ function ArbitrageContent() {
 
           {/* Mobile cards */}
           <div className="lg:hidden space-y-3">
-            {filtered.map((opp, i) => <MobileCard key={i} opp={opp} />)}
+            {filtered.map((opp, i) => (
+              <MobileCard
+                key={i}
+                opp={opp}
+                liveKalshiAsk={liveKalshi.get(opp.kalshi_market_id)?.yes_ask}
+                livePolyAsk={livePoly.get(opp.poly_market_id)}
+              />
+            ))}
           </div>
         </>
       )}
