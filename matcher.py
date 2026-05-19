@@ -62,11 +62,34 @@ def parse_kalshi_market(m) -> dict:
 # ── STEP 2: BUILD EVENT-LEVEL GROUPS ─────────────────────────────────────────
 
 print("Fetching markets...")
-kalshi_markets = kalshi_ex.fetch_markets()
-poly_markets   = poly_ex.fetch_markets()
+kalshi_markets_raw = kalshi_ex.fetch_markets()
+poly_markets_raw   = poly_ex.fetch_markets()
 
-poly_parsed   = [parse_poly_market(m)   for m in poly_markets]
-kalshi_parsed = [parse_kalshi_market(m) for m in kalshi_markets]
+# Build price + URL lookup dicts now so arbitrage.py needs no extra API calls
+def _kalshi_url(market_id: str) -> str:
+    parts = market_id.split("-")
+    event_slug = "-".join(parts[:-1]).upper() if len(parts) >= 2 else market_id
+    return f"https://kalshi.com/events/{event_slug}"
+
+poly_price_map = {
+    str(m.market_id): {
+        "yes_ask": m.yes.price if (hasattr(m, "yes") and m.yes) else None,
+        "no_ask":  m.no.price  if (hasattr(m, "no")  and m.no)  else None,
+        "url":     getattr(m, "url", None),
+    }
+    for m in poly_markets_raw
+}
+kalshi_price_map = {
+    str(m.market_id): {
+        "yes_ask": m.yes.price if (hasattr(m, "yes") and m.yes) else None,
+        "no_ask":  m.no.price  if (hasattr(m, "no")  and m.no)  else None,
+        "url":     getattr(m, "url", None) or _kalshi_url(str(m.market_id)),
+    }
+    for m in kalshi_markets_raw
+}
+
+poly_parsed   = [parse_poly_market(m)   for m in poly_markets_raw]
+kalshi_parsed = [parse_kalshi_market(m) for m in kalshi_markets_raw]
 
 df_poly   = pd.DataFrame(poly_parsed)
 df_kalshi = pd.DataFrame(kalshi_parsed)
@@ -158,6 +181,8 @@ for ev in event_matches:
         ev["kalshi_outcomes"], ev["kalshi_labels"],
     )
     for op in outcome_pairs:
+        pp = poly_price_map.get(str(op["poly_market_id"]), {})
+        kp = kalshi_price_map.get(str(op["kalshi_market_id"]), {})
         rows.append({
             "poly_event":       ev["poly_event"],
             "kalshi_event":     ev["kalshi_event"],
@@ -167,6 +192,12 @@ for ev in event_matches:
             "kalshi_market_id": op["kalshi_market_id"],
             "kalshi_label":     op["kalshi_label"],
             "outcome_score":    op["outcome_score"],
+            "poly_yes_ask":     pp.get("yes_ask"),
+            "poly_no_ask":      pp.get("no_ask"),
+            "poly_url":         pp.get("url"),
+            "kalshi_yes_ask":   kp.get("yes_ask"),
+            "kalshi_no_ask":    kp.get("no_ask"),
+            "kalshi_url":       kp.get("url"),
         })
 
 df_out = pd.DataFrame(rows)

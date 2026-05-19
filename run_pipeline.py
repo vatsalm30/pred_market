@@ -19,8 +19,6 @@ DATA_DIR = os.path.join("web", "public", "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 run_with_retry([sys.executable, "matcher.py"])
-print("Waiting 60s before arbitrage scan to avoid rate limits...")
-time.sleep(60)
 run_with_retry([sys.executable, "arbitrage.py"])
 
 def csv_to_json(src, dst, numeric_fields):
