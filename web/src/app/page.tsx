@@ -166,7 +166,7 @@ export default function HomePage() {
             className="flex flex-col sm:flex-row gap-3"
           >
             <Link
-              href="/markets"
+              href="/events?view=compare"
               className="btn-lift inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[--text-primary] text-[--bg] font-semibold text-sm"
             >
               See all matched markets
@@ -219,7 +219,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-xl font-semibold text-[--text-primary]">A sample of what we track</h2>
             <Link
-              href="/markets"
+              href="/events"
               className="link-arrow text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors flex items-center gap-1"
             >
               All markets <ArrowRight className="w-3.5 h-3.5" />
@@ -327,7 +327,7 @@ export default function HomePage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3 shrink-0">
               <Link
-                href="/markets"
+                href="/events?view=compare"
                 className="btn-lift inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[--text-primary] text-[--bg] font-semibold text-sm"
               >
                 <TrendingUp className="w-4 h-4" />

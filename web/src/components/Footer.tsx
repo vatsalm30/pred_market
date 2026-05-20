@@ -34,7 +34,8 @@ export default function Footer() {
             <div>
               <p className="text-xs font-medium text-[--text-muted] uppercase tracking-wider mb-3">Tool</p>
               <ul className="space-y-2">
-                <li><Link href="/markets" className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors">Compare Markets</Link></li>
+                <li><Link href="/events?view=compare" className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors">Compare Markets</Link></li>
+                <li><Link href="/events" className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors">All Markets</Link></li>
                 <li><Link href="/arbitrage" className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors">Arbitrage Scanner</Link></li>
               </ul>
             </div>

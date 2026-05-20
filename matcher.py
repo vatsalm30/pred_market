@@ -311,11 +311,22 @@ def _max_yes(price_map, market_ids):
 
 all_event_list = []
 
+def _top_outcomes(market_ids, labels, price_map, limit=12):
+    """Return outcomes sorted by price descending, up to limit."""
+    items = []
+    for mid, label in zip(market_ids, labels):
+        price = price_map.get(str(mid), {}).get("yes_ask")
+        if price is not None:
+            items.append({"label": label, "price": round(price, 4)})
+    items.sort(key=lambda x: -x["price"])
+    return items[:limit]
+
 for _, row in poly_events.iterrows():
-    pkey  = row["parent"]
-    poids = row["outcomes"]
-    pp    = poly_price_map.get(str(poids[0]), {}) if poids else {}
-    match = poly_to_match.get(pkey)
+    pkey    = row["parent"]
+    poids   = row["outcomes"]
+    plabels = row["labels"]
+    pp      = poly_price_map.get(str(poids[0]), {}) if poids else {}
+    match   = poly_to_match.get(pkey)
 
     entry = {
         "id":              _slug(pkey),
@@ -333,6 +344,7 @@ for _, row in poly_events.iterrows():
         "num_outcomes":    len(poids),
         "is_matched":      bool(match),
         "event_score":     match["event_score"] if match else None,
+        "top_outcomes":    [] if match else _top_outcomes(poids, plabels, poly_price_map),
     }
 
     if match:
@@ -349,11 +361,12 @@ for _, row in poly_events.iterrows():
     all_event_list.append(entry)
 
 for _, row in kalshi_events.iterrows():
-    kkey  = row["parent"]
+    kkey    = row["parent"]
     if kkey in matched_kalshi_set:
         continue
-    koids = row["outcomes"]
-    kp    = kalshi_price_map.get(str(koids[0]), {}) if koids else {}
+    koids   = row["outcomes"]
+    klabels = row["labels"]
+    kp      = kalshi_price_map.get(str(koids[0]), {}) if koids else {}
     k_vol     = sum(kalshi_price_map.get(str(mid), {}).get("volume",     0) or 0 for mid in koids)
     k_vol_24h = sum(kalshi_price_map.get(str(mid), {}).get("volume_24h", 0) or 0 for mid in koids)
     all_event_list.append({
@@ -372,6 +385,7 @@ for _, row in kalshi_events.iterrows():
         "num_outcomes":    len(koids),
         "is_matched":      False,
         "event_score":     None,
+        "top_outcomes":    _top_outcomes(koids, klabels, kalshi_price_map),
     })
 
 all_event_list.sort(key=lambda x: -(x["volume"] or 0))

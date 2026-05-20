@@ -35,13 +35,65 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
 
 function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMarket | null }) {
   if (!matched) {
+    const hasPoly   = event.platforms.includes("polymarket");
+    const hasKalshi = event.platforms.includes("kalshi");
     const polyPrice   = event.yes_price_poly;
     const kalshiPrice = event.yes_price_kalshi;
+    const topOutcomes = event.top_outcomes ?? [];
+
+    // Multi-outcome single-platform: show ranked outcome bars
+    if (topOutcomes.length > 1) {
+      const color  = hasPoly ? "#1652F0" : "#00B3A1";
+      const Logo   = hasPoly ? PolymarketLogo : KalshiLogo;
+      const ptName = hasPoly ? "Polymarket" : "Kalshi";
+      const leader = topOutcomes[0].price;
+
+      return (
+        <div className="surface rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-[--border-subtle] flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-[--text-primary]">Outcome Probabilities</h2>
+            <div className="flex items-center gap-1.5 text-xs text-[--text-muted]">
+              <Logo size={13} />
+              <span>{ptName}</span>
+            </div>
+          </div>
+          <div className="px-5 py-4 space-y-3">
+            {topOutcomes.map((o, i) => {
+              const w = leader > 0 ? (o.price / leader) * 100 : 0;
+              const pctVal = (o.price * 100).toFixed(1) + "%";
+              return (
+                <div key={i} className="group/bar">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-[--text-secondary]">{o.label}</span>
+                    <span className="font-mono text-sm font-semibold" style={{ color }}>{pctVal}</span>
+                  </div>
+                  <div className="relative h-5 rounded-full bg-[--bg-subtle] group-hover/bar:bg-[--surface-hover] transition-colors">
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-full flex items-center justify-end pr-2 transition-all"
+                      style={{ width: `${w}%`, minWidth: "10px", background: color + "CC" }}
+                    >
+                      {w > 15 && <span className="text-white/90 text-[10px] font-medium">{pctVal}</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {event.num_outcomes > topOutcomes.length && (
+            <p className="px-5 pb-4 text-xs text-[--text-muted]">
+              Showing top {topOutcomes.length} of {event.num_outcomes} outcomes
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    // Binary / no top_outcomes fallback
     if (polyPrice == null && kalshiPrice == null) return null;
 
     const rows = [
-      { label: "Polymarket", price: polyPrice,   color: "#1652F0", show: event.platforms.includes("polymarket") },
-      { label: "Kalshi",     price: kalshiPrice, color: "#00B3A1", show: event.platforms.includes("kalshi") },
+      { label: "Polymarket", price: polyPrice,   color: "#1652F0", Logo: PolymarketLogo, show: hasPoly   },
+      { label: "Kalshi",     price: kalshiPrice, color: "#00B3A1", Logo: KalshiLogo,     show: hasKalshi },
     ].filter((r) => r.show && r.price != null);
 
     return (
@@ -51,22 +103,28 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
         </div>
         <div className="px-5 py-4 space-y-4">
           {rows.map((row) => {
-            const yesPct = (row.price! * 100);
+            const yesPct = row.price! * 100;
             return (
-              <div key={row.label}>
-                <div className="flex items-center justify-between mb-1.5">
+              <div key={row.label} className="group/bar">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <row.Logo size={13} />
                   <span className="text-sm text-[--text-secondary]">{row.label}</span>
-                  <span className="font-mono text-sm font-semibold" style={{ color: row.color }}>
+                  <span className="ml-auto font-mono text-sm font-semibold" style={{ color: row.color }}>
                     {pct(row.price)} YES
                   </span>
                 </div>
-                <div className="relative h-5 rounded-full bg-[--bg-subtle]">
+                <div className="relative h-5 rounded-full bg-[--bg-subtle] group-hover/bar:bg-[--surface-hover] transition-colors">
                   <div
                     className="absolute inset-y-0 left-0 rounded-full flex items-center justify-end pr-2"
                     style={{ width: `${yesPct}%`, minWidth: "10px", background: row.color + "CC" }}
                   >
                     {yesPct > 12 && <span className="text-white/90 text-[10px] font-medium">{pct(row.price)}</span>}
                   </div>
+                  {(100 - yesPct) > 14 && (
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-2 text-[10px] text-[--text-muted]">
+                      {(100 - yesPct).toFixed(1)}% NO
+                    </span>
+                  )}
                 </div>
               </div>
             );
@@ -94,7 +152,7 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
             if (row.yes == null) return null;
             const yesPct = row.yes * 100;
             return (
-              <div key={row.label}>
+              <div key={row.label} className="group/bar">
                 <div className="flex items-center gap-2 mb-1.5">
                   {row.logo}
                   <span className="text-sm text-[--text-secondary]">{row.label}</span>
@@ -102,7 +160,7 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
                     {pct(row.yes)} YES
                   </span>
                 </div>
-                <div className="relative h-5 rounded-full bg-[--bg-subtle]">
+                <div className="relative h-5 rounded-full bg-[--bg-subtle] group-hover/bar:bg-[--surface-hover] transition-colors">
                   <div
                     className="absolute inset-y-0 left-0 rounded-full flex items-center justify-end pr-2"
                     style={{ width: `${yesPct}%`, minWidth: "10px", background: row.color + "CC" }}
@@ -395,10 +453,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ slug: st
             </span>
           </div>
           <Link
-            href={`/markets`}
+            href={`/events?view=compare&search=${encodeURIComponent(event.title)}`}
             className="link-arrow text-xs text-[--arb-amber] flex items-center gap-1"
           >
-            View comparison <ArrowLeft className="w-3 h-3 rotate-180" />
+            Compare <ArrowLeft className="w-3 h-3 rotate-180" />
           </Link>
         </div>
       )}

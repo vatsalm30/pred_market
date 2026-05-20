@@ -12,24 +12,26 @@ export function BinaryOddsChart({ outcomes }: { outcomes: MatchedMarket[] }) {
   const kalshiYes = o.kalshi_yes_ask as number | undefined;
   if (polyYes == null && kalshiYes == null) return null;
 
+  const hasPoly   = polyYes   != null;
+  const hasKalshi = kalshiYes != null;
+
   const rows = [
     { label: "Polymarket", yes: polyYes,   color: "#1652F0", logo: <PolymarketLogo size={13} /> },
     { label: "Kalshi",     yes: kalshiYes, color: "#00B3A1", logo: <KalshiLogo size={13} /> },
-  ];
+  ].filter((r) => r.yes != null);
 
   return (
     <div className="px-5 py-4 border-t border-[--border-subtle] bg-[--bg-subtle] space-y-3">
       <div className="flex items-center justify-between mb-1">
         <span className="text-[10px] uppercase tracking-widest text-[--text-muted] font-medium">Odds</span>
         <div className="flex items-center gap-3 text-[10px] text-[--text-muted]">
-          <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#1652F0]/80" /> Polymarket</span>
-          <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#00B3A1]/80" /> Kalshi</span>
+          {hasPoly   && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#1652F0]/80" /> Polymarket</span>}
+          {hasKalshi && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#00B3A1]/80" /> Kalshi</span>}
         </div>
       </div>
       {rows.map((row) => {
-        if (row.yes == null) return null;
-        const yesPct = row.yes * 100;
-        const noPct  = (1 - row.yes) * 100;
+        const yesPct = row.yes! * 100;
+        const noPct  = (1 - row.yes!) * 100;
         return (
           <div key={row.label} className="group/bar">
             <div className="flex items-center gap-2 mb-1">
@@ -51,7 +53,7 @@ export function BinaryOddsChart({ outcomes }: { outcomes: MatchedMarket[] }) {
                   className="absolute inset-y-0 right-0 flex items-center pr-1.5 text-[10px] text-[--text-muted] font-medium"
                   style={{ left: `max(${yesPct}%, 10px)` }}
                 >
-                  {pct(1 - row.yes)} NO
+                  {pct(1 - row.yes!)} NO
                 </span>
               )}
             </div>
@@ -79,6 +81,9 @@ export function MultiOddsChart({
 
   if (!priced.length) return null;
 
+  const hasPoly   = priced.some((o) => o.poly_yes_ask   != null);
+  const hasKalshi = priced.some((o) => o.kalshi_yes_ask != null);
+
   const leader = Math.max(
     ...priced.map((o) => Math.max((o.poly_yes_ask as number) ?? 0, (o.kalshi_yes_ask as number) ?? 0))
   );
@@ -90,8 +95,8 @@ export function MultiOddsChart({
           Top outcomes by probability
         </span>
         <div className="flex items-center gap-3 text-[10px] text-[--text-muted]">
-          <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#1652F0]/80" /> Poly</span>
-          <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#00B3A1]/80" /> Kalshi</span>
+          {hasPoly   && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#1652F0]/80" /> Poly</span>}
+          {hasKalshi && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#00B3A1]/80" /> Kalshi</span>}
         </div>
       </div>
       <div className="space-y-3">
@@ -101,25 +106,29 @@ export function MultiOddsChart({
           const polyW     = polyYes   != null ? (polyYes   / leader) * 100 : 0;
           const kalshiW   = kalshiYes != null ? (kalshiYes / leader) * 100 : 0;
           return (
-            <div key={i} className="grid grid-cols-[120px_1fr_56px] items-center gap-2 group/row rounded-lg px-1 py-0.5 -mx-1 hover:bg-[--surface] transition-colors cursor-default">
-              <span className="chart-label text-[11px] text-[--text-secondary] truncate">{o.poly_label}</span>
+            <div key={i} className="grid grid-cols-[minmax(80px,120px)_1fr_56px] items-center gap-2 group/row rounded-lg px-1 py-0.5 -mx-1 hover:bg-[--surface] transition-colors cursor-default">
+              <span className="chart-label text-[11px] text-[--text-secondary] truncate">{o.poly_label || o.kalshi_label}</span>
               <div className="flex flex-col gap-0.5">
-                <div className="relative h-3 rounded-full bg-[--surface-hover] group-hover/row:bg-[--border] transition-colors">
-                  {polyYes != null && (
-                    <div className="bar-fill bar-fill-poly absolute inset-y-0 left-0 rounded-full"
-                      style={{ width: `${polyW}%`, minWidth: "8px", background: "#1652F0CC" }} />
-                  )}
-                </div>
-                <div className="relative h-3 rounded-full bg-[--surface-hover] group-hover/row:bg-[--border] transition-colors">
-                  {kalshiYes != null && (
-                    <div className="bar-fill bar-fill-kalshi absolute inset-y-0 left-0 rounded-full"
-                      style={{ width: `${kalshiW}%`, minWidth: "8px", background: "#00B3A1CC" }} />
-                  )}
-                </div>
+                {hasPoly && (
+                  <div className="relative h-3 rounded-full bg-[--surface-hover] group-hover/row:bg-[--border] transition-colors">
+                    {polyYes != null && (
+                      <div className="bar-fill bar-fill-poly absolute inset-y-0 left-0 rounded-full"
+                        style={{ width: `${polyW}%`, minWidth: "8px", background: "#1652F0CC" }} />
+                    )}
+                  </div>
+                )}
+                {hasKalshi && (
+                  <div className="relative h-3 rounded-full bg-[--surface-hover] group-hover/row:bg-[--border] transition-colors">
+                    {kalshiYes != null && (
+                      <div className="bar-fill bar-fill-kalshi absolute inset-y-0 left-0 rounded-full"
+                        style={{ width: `${kalshiW}%`, minWidth: "8px", background: "#00B3A1CC" }} />
+                    )}
+                  </div>
+                )}
               </div>
               <div className="flex flex-col items-end gap-0.5">
-                <span className="chart-price chart-price-poly text-[10px] font-mono text-[#1652F0] dark:text-[#5b8df8]">{pct(polyYes)}</span>
-                <span className="chart-price chart-price-kalshi text-[10px] font-mono text-[--kalshi-teal]">{pct(kalshiYes)}</span>
+                {hasPoly   && <span className="chart-price chart-price-poly text-[10px] font-mono text-[#1652F0] dark:text-[#5b8df8]">{pct(polyYes)}</span>}
+                {hasKalshi && <span className="chart-price chart-price-kalshi text-[10px] font-mono text-[--kalshi-teal]">{pct(kalshiYes)}</span>}
               </div>
             </div>
           );

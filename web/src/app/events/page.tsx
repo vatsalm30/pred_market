@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Search, Filter, TrendingUp, Calendar, ArrowRight,
   ChevronDown, ChevronUp, AlertTriangle, LayoutGrid, Rows3,
@@ -43,18 +44,71 @@ function pct(v: number | undefined): string {
   return (v * 100).toFixed(v < 0.1 ? 1 : 0) + "%";
 }
 
-// ── Single-platform bar (unmatched events) ────────────────────────────────────
-function SinglePlatformBar({
-  yesPrice,
+// ── Single-platform outcomes chart ───────────────────────────────────────────
+function SinglePlatformOutcomes({
+  event,
   platform,
 }: {
-  yesPrice: number | null;
+  event: AllEvent;
   platform: "polymarket" | "kalshi";
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const color   = platform === "polymarket" ? "#1652F0" : "#00B3A1";
+  const Logo    = platform === "polymarket" ? PolymarketLogo : KalshiLogo;
+  const label   = platform === "polymarket" ? "Polymarket" : "Kalshi";
+  const yesPrice = platform === "polymarket" ? event.yes_price_poly : event.yes_price_kalshi;
+  const outcomes = event.top_outcomes ?? [];
+
+  // Multi-outcome: show top outcomes as bars
+  if (outcomes.length > 1) {
+    const leader = outcomes[0].price;
+    const PREVIEW = 3;
+    const shown = expanded ? outcomes : outcomes.slice(0, PREVIEW);
+    const rest  = outcomes.length - PREVIEW;
+    return (
+      <div className="px-4 py-3 border-t border-[--border-subtle] bg-[--bg-subtle]">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5 text-[10px] text-[--text-muted]">
+            <Logo size={11} />
+            <span>{label}</span>
+          </div>
+          <span className="text-[10px] uppercase tracking-widest text-[--text-muted] font-medium">Odds</span>
+        </div>
+        <div className="space-y-2">
+          {shown.map((o, i) => {
+            const w = leader > 0 ? (o.price / leader) * 100 : 0;
+            return (
+              <div key={i} className="flex items-center gap-2">
+                <span className="text-[11px] text-[--text-secondary] truncate w-[45%] shrink-0">{o.label}</span>
+                <div className="flex-1 relative h-3.5 rounded-full bg-[--surface-hover]">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full"
+                    style={{ width: `${w}%`, minWidth: "6px", background: color + "CC" }}
+                  />
+                </div>
+                <span className="text-[10px] font-mono font-semibold shrink-0 w-10 text-right" style={{ color }}>
+                  {(o.price * 100).toFixed(1)}%
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        {outcomes.length > PREVIEW && (
+          <button
+            onClick={(e) => { e.preventDefault(); setExpanded(!expanded); }}
+            className="mt-2 text-[10px] text-[--text-muted] hover:text-[--text-primary] transition-colors flex items-center gap-0.5"
+          >
+            {expanded
+              ? <><ChevronUp className="w-3 h-3" /> Show less</>
+              : <><ChevronDown className="w-3 h-3" /> {rest} more outcomes</>}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // Binary fallback
   if (yesPrice == null) return null;
-  const color = platform === "polymarket" ? "#1652F0" : "#00B3A1";
-  const Logo  = platform === "polymarket" ? PolymarketLogo : KalshiLogo;
-  const label = platform === "polymarket" ? "Polymarket" : "Kalshi";
   const yesPct = yesPrice * 100;
   return (
     <div className="px-4 py-4 border-t border-[--border-subtle] bg-[--bg-subtle]">
@@ -87,7 +141,7 @@ function EventCard({ event, matched }: { event: AllEvent; matched: GroupedMarket
   const hasKalshi = event.platforms.includes("kalshi");
 
   return (
-    <div className="market-card surface rounded-2xl overflow-hidden flex flex-col">
+    <div className="market-card surface rounded-2xl overflow-hidden flex flex-col break-inside-avoid mb-4">
       <div className="px-4 py-3.5 border-b border-[--border-subtle]">
         <div className="flex items-start gap-3">
           <EventIcon src={event.icon || null} alt={event.title} size={40} className="shrink-0 mt-0.5" />
@@ -108,7 +162,7 @@ function EventCard({ event, matched }: { event: AllEvent; matched: GroupedMarket
             <h3 className="text-[--text-primary] text-sm font-semibold leading-snug line-clamp-2">
               {event.title}
             </h3>
-            {event.num_outcomes > 1 && (
+            {event.num_outcomes > 2 && (
               <p className="text-[10px] text-[--text-muted] mt-0.5">{event.num_outcomes} outcomes</p>
             )}
           </div>
@@ -119,8 +173,8 @@ function EventCard({ event, matched }: { event: AllEvent; matched: GroupedMarket
         {matched ? (
           <OddsChart outcomes={matched.outcomes} maxOutcomes={4} />
         ) : (
-          <SinglePlatformBar
-            yesPrice={hasPoly ? event.yes_price_poly : event.yes_price_kalshi}
+          <SinglePlatformOutcomes
+            event={event}
             platform={hasPoly ? "polymarket" : "kalshi"}
           />
         )}
@@ -169,7 +223,7 @@ function CompareCard({
   const shown = group.outcomes.slice(0, expanded ? undefined : 5);
 
   return (
-    <div className="market-card surface rounded-2xl overflow-hidden">
+    <div className="market-card surface rounded-2xl overflow-hidden break-inside-avoid mb-4">
       {/* Header */}
       <div className="px-5 py-4 border-b border-[--border-subtle]">
         <div className="flex items-start justify-between gap-4">
@@ -316,21 +370,26 @@ function CompareCard({
   );
 }
 
-type PlatformFilter = "all" | "polymarket" | "kalshi" | "both";
+// platform filter: set of "polymarket" | "kalshi" | "both"
+// empty set = show all
+type PlatformKey = "polymarket" | "kalshi" | "both";
 type SortKey = "volume" | "volume_24h" | "date" | "probability";
 type ViewMode = "all" | "compare";
 
 const PAGE_SIZE = 24;
 
-export default function AllEventsPage() {
+function AllEventsPage() {
+  const searchParams = useSearchParams();
+
   const [events, setEvents]         = useState<AllEvent[]>([]);
   const [matchedMap, setMatchedMap] = useState<Map<string, GroupedMarket>>(new Map());
   const [loading, setLoading]       = useState(true);
-  const [search, setSearch]         = useState("");
+  const [search, setSearch]         = useState(searchParams.get("search") ?? "");
   const [category, setCategory]     = useState("All");
-  const [platform, setPlatform]     = useState<PlatformFilter>("all");
+  // multi-select platform filter: empty = all
+  const [platforms, setPlatforms]   = useState<Set<PlatformKey>>(new Set());
   const [sortBy, setSortBy]         = useState<SortKey>("volume");
-  const [view, setView]             = useState<ViewMode>("all");
+  const [view, setView]             = useState<ViewMode>((searchParams.get("view") as ViewMode) ?? "all");
   const [page, setPage]             = useState(1);
   const [expanded, setExpanded]     = useState<Record<string, boolean>>({});
   const sentinelRef                 = useRef<HTMLDivElement>(null);
@@ -343,16 +402,31 @@ export default function AllEventsPage() {
     });
   }, []);
 
-  useEffect(() => { setPage(1); }, [search, category, platform, sortBy, view]);
+  useEffect(() => { setPage(1); }, [search, category, platforms, sortBy, view]);
 
-  // "All" mode
+  function togglePlatform(key: PlatformKey) {
+    setPlatforms((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  // "All" mode — exclusive platform filtering
   const filtered = useMemo(() => {
     const list = events.filter((e) => {
       if (search && !e.title.toLowerCase().includes(search.toLowerCase())) return false;
       if (category !== "All" && e.category !== category) return false;
-      if (platform === "polymarket" && !e.platforms.includes("polymarket")) return false;
-      if (platform === "kalshi"     && !e.platforms.includes("kalshi"))     return false;
-      if (platform === "both"       && e.platforms.length < 2)              return false;
+      if (platforms.size > 0) {
+        const onPoly   = e.platforms.includes("polymarket");
+        const onKalshi = e.platforms.includes("kalshi");
+        const onBoth   = onPoly && onKalshi;
+        const matchPoly   = platforms.has("polymarket") && onPoly   && !onBoth;
+        const matchKalshi = platforms.has("kalshi")     && onKalshi && !onBoth;
+        const matchBoth   = platforms.has("both")       && onBoth;
+        if (!matchPoly && !matchKalshi && !matchBoth) return false;
+      }
       return true;
     });
     return [...list].sort((a, b) => {
@@ -367,7 +441,7 @@ export default function AllEventsPage() {
       const pb = b.yes_price_poly ?? b.yes_price_kalshi ?? 0;
       return pb - pa;
     });
-  }, [events, search, category, platform, sortBy]);
+  }, [events, search, category, platforms, sortBy]);
 
   // "Compare" mode — keyed on GroupedMarket, joined with AllEvent for 24h vol
   const eventTitleMap = useMemo(() => new Map(events.map((e) => [e.title, e])), [events]);
@@ -406,11 +480,17 @@ export default function AllEventsPage() {
   const totalVol   = events.reduce((s, e) => s + e.volume, 0);
   const totalVol24h = events.reduce((s, e) => s + (e.volume_24h || 0), 0);
 
+  const platformOptions: { key: PlatformKey; label: string; icon: React.ReactNode }[] = [
+    { key: "polymarket", label: "Polymarket", icon: <PolymarketLogo size={11} /> },
+    { key: "kalshi",     label: "Kalshi",     icon: <KalshiLogo size={11} /> },
+    { key: "both",       label: "Both",       icon: <><PolymarketLogo size={11} /><KalshiLogo size={11} /></> },
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-xs text-[--text-muted] mb-5">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-center gap-2 text-xs text-[--text-muted] mb-4 sm:mb-5">
           <Link href="/" className="hover:text-[--text-primary] transition-colors">Home</Link>
           <span>/</span>
           <span>All Markets</span>
@@ -418,7 +498,7 @@ export default function AllEventsPage() {
 
         <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-[--text-primary] leading-tight mb-2">
+            <h1 className="text-2xl sm:text-4xl font-bold text-[--text-primary] leading-tight mb-1.5 sm:mb-2">
               All Markets
             </h1>
             <p className="text-[--text-secondary] text-sm">
@@ -450,10 +530,10 @@ export default function AllEventsPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-5 text-sm text-[--text-secondary]">
+        <div className="flex flex-wrap gap-3 sm:gap-5 text-sm text-[--text-secondary]">
           <span><strong className="text-[--text-primary] font-semibold">{loading ? "—" : events.length.toLocaleString()}</strong> markets</span>
           <span><strong className="text-[--text-primary] font-semibold">{loading ? "—" : formatVolume(totalVol)}</strong> total vol</span>
-          <span><strong className="text-[--text-primary] font-semibold">{loading ? "—" : formatVolume(totalVol24h)}</strong> 24h vol</span>
+          <span className="hidden sm:inline"><strong className="text-[--text-primary] font-semibold">{loading ? "—" : formatVolume(totalVol24h)}</strong> 24h vol</span>
           <span><strong className="text-[--text-primary] font-semibold">{loading ? "—" : events.filter((e) => e.is_matched).length}</strong> cross-platform</span>
           <span className="flex items-center gap-1.5 text-[--kalshi-teal] text-xs">
             <span className="w-1.5 h-1.5 rounded-full bg-[--kalshi-teal] live-dot" />
@@ -476,35 +556,36 @@ export default function AllEventsPage() {
             />
           </div>
           {view === "all" && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {(["all", "polymarket", "kalshi", "both"] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPlatform(p)}
-                  className={`btn-pill flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium ${
-                    platform === p
-                      ? "bg-[--surface] text-[--text-primary] border border-[--border]"
-                      : "text-[--text-muted] hover:text-[--text-primary]"
-                  }`}
-                >
-                  {p === "polymarket" && <PolymarketLogo size={11} />}
-                  {p === "kalshi"     && <KalshiLogo size={11} />}
-                  {p === "both"       && <><PolymarketLogo size={11} /><KalshiLogo size={11} /></>}
-                  {p === "all" ? "All" : p === "both" ? "Both" : p === "polymarket" ? "Polymarket" : "Kalshi"}
-                </button>
-              ))}
+            <div className="flex items-center gap-1.5">
+              {platformOptions.map(({ key, label, icon }) => {
+                const active = platforms.has(key);
+                return (
+                  <button
+                    key={key}
+                    onClick={() => togglePlatform(key)}
+                    className={`btn-pill flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      active
+                        ? "bg-[--surface] text-[--text-primary] border border-[--border]"
+                        : "text-[--text-muted] hover:text-[--text-primary] border border-transparent"
+                    }`}
+                  >
+                    {icon}
+                    <span className="hidden sm:inline">{label}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
 
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
             <Filter className="w-3.5 h-3.5 text-[--text-muted] shrink-0" />
             {categories.map((c) => (
               <button
                 key={c}
                 onClick={() => setCategory(c)}
-                className={`btn-pill px-2.5 py-1.5 rounded-lg text-xs font-medium ${
+                className={`btn-pill px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-xs font-medium ${
                   category === c
                     ? "bg-[--surface] text-[--text-primary] border border-[--border]"
                     : "text-[--text-muted] hover:text-[--text-primary]"
@@ -514,19 +595,19 @@ export default function AllEventsPage() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[--text-muted] text-xs">Sort:</span>
+          <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+            <span className="text-[--text-muted] text-xs hidden sm:inline">Sort:</span>
             {(["volume", "volume_24h", "date", "probability"] as const).map((s) => (
               <button
                 key={s}
                 onClick={() => setSortBy(s)}
-                className={`btn-pill px-2.5 py-1.5 rounded-lg text-xs font-medium ${
+                className={`btn-pill px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-xs font-medium ${
                   sortBy === s
                     ? "bg-[--surface] text-[--text-primary] border border-[--border]"
                     : "text-[--text-muted] hover:text-[--text-primary]"
                 }`}
               >
-                {s === "volume" ? "Total Vol" : s === "volume_24h" ? "24h Vol" : s === "date" ? "Date" : "Prob"}
+                {s === "volume" ? "Vol" : s === "volume_24h" ? "24h" : s === "date" ? "Date" : "Prob"}
               </button>
             ))}
           </div>
@@ -537,13 +618,18 @@ export default function AllEventsPage() {
         <p className="text-[--text-muted] text-xs mb-5">
           {Math.min(page * PAGE_SIZE, activeList.length)} of {activeList.length.toLocaleString()}{" "}
           {view === "compare" ? "matched events" : "markets"}
+          {platforms.size > 0 && view === "all" && (
+            <button onClick={() => setPlatforms(new Set())} className="ml-2 text-[--text-secondary] hover:text-[--text-primary] underline underline-offset-2 transition-colors">
+              clear filter
+            </button>
+          )}
         </p>
       )}
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
           {[...Array(12)].map((_, i) => (
-            <div key={i} className="surface rounded-2xl h-52 animate-pulse" style={{ opacity: 1 - i * 0.06 }} />
+            <div key={i} className="surface rounded-2xl h-52 animate-pulse mb-4 break-inside-avoid" style={{ opacity: 1 - i * 0.06 }} />
           ))}
         </div>
       ) : activeList.length === 0 ? (
@@ -553,7 +639,7 @@ export default function AllEventsPage() {
         </div>
       ) : view === "all" ? (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
             {filtered.slice(0, page * PAGE_SIZE).map((event) => (
               <EventCard
                 key={event.id}
@@ -576,7 +662,7 @@ export default function AllEventsPage() {
         </>
       ) : (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="columns-1 lg:columns-2 gap-4">
             {compareList.slice(0, page * PAGE_SIZE).map((group) => (
               <CompareCard
                 key={group.poly_event}
@@ -601,5 +687,21 @@ export default function AllEventsPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function EventsPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="surface rounded-2xl h-52 animate-pulse mb-4 break-inside-avoid" style={{ opacity: 1 - i * 0.06 }} />
+          ))}
+        </div>
+      </div>
+    }>
+      <AllEventsPage />
+    </Suspense>
   );
 }

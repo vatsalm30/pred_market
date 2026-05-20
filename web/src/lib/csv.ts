@@ -77,6 +77,7 @@ export interface AllEvent {
   num_outcomes: number;
   is_matched: boolean;
   event_score: number | null;
+  top_outcomes?: { label: string; price: number }[];
 }
 
 // Module-level cache: each URL is fetched at most once per browser session.
