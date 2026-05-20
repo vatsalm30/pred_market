@@ -32,6 +32,8 @@ class Opportunity:
 
     poly_url: str
     kalshi_url: str
+    poly_end_date: str
+    kalshi_end_date: str
 
     @property
     def is_strong(self) -> bool:
@@ -100,6 +102,8 @@ def find_arbitrage_opportunities(matches: List[Dict]) -> List[Opportunity]:
                     net_profit_pct   = round(net_profit_pct, 4),
                     poly_url         = poly_url,
                     kalshi_url       = kalshi_url,
+                    poly_end_date    = str(m.get("poly_end_date",   "") or ""),
+                    kalshi_end_date  = str(m.get("kalshi_end_date", "") or ""),
                 )
             )
 

@@ -3,10 +3,25 @@
 import { useEffect, useState, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Zap, Search, Filter, ArrowUpRight, Info, ExternalLink, Radio } from "lucide-react";
+import { Zap, Search, Filter, ArrowUpRight, Info, ExternalLink, Radio, Calendar, AlertTriangle } from "lucide-react";
 import { fetchArbitrageOpportunities, type ArbitrageOpportunity, categoryFromEvent } from "@/lib/csv";
 import { PolymarketLogo, KalshiLogo } from "@/components/PlatformLogos";
 import { useLivePrices } from "@/hooks/useLivePrices";
+
+function fmtDate(d?: string): string {
+  if (!d) return "—";
+  const dt = new Date(d + "T00:00:00Z");
+  if (isNaN(dt.getTime())) return "—";
+  return dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+}
+
+function dateDiffDays(a?: string, b?: string): number | null {
+  if (!a || !b) return null;
+  const da = new Date(a + "T00:00:00Z").getTime();
+  const db = new Date(b + "T00:00:00Z").getTime();
+  if (isNaN(da) || isNaN(db)) return null;
+  return Math.abs(da - db) / (1000 * 60 * 60 * 24);
+}
 
 const CATEGORY_COLORS: Record<string, string> = {
   Politics:  "text-blue-500  dark:text-blue-400  bg-blue-500/8   border-blue-500/20",
@@ -97,6 +112,22 @@ function DesktopRow({
         </span>
       </td>
       <td className="px-4 py-4 text-center"><ProfitBadge pct={opp.net_profit_pct} /></td>
+      <td className="px-4 py-4 text-center">
+        {(() => {
+          const diff = dateDiffDays(opp.poly_end_date, opp.kalshi_end_date);
+          const mismatch = diff !== null && diff > 30;
+          return (
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-[--text-secondary] text-xs font-mono tabular-nums">{fmtDate(opp.poly_end_date)}</span>
+              {mismatch && (
+                <span className="flex items-center gap-1 text-[10px] text-amber-500">
+                  <AlertTriangle className="w-2.5 h-2.5" /> {Math.round(diff)}d off
+                </span>
+              )}
+            </div>
+          );
+        })()}
+      </td>
       <td className="px-4 py-4">
         <div className="row-actions flex items-center gap-3">
           <a href={opp.poly_url} target="_blank" rel="noopener noreferrer"
@@ -157,7 +188,7 @@ function MobileCard({
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-2">
         <span className="text-[--arb-amber] font-mono text-xs">Spread: +{(opp.gross_spread * 100).toFixed(2)}¢</span>
         <div className="flex gap-3">
           <a href={opp.poly_url} target="_blank" rel="noopener noreferrer"
@@ -170,6 +201,21 @@ function MobileCard({
           </a>
         </div>
       </div>
+      {(() => {
+        const diff = dateDiffDays(opp.poly_end_date, opp.kalshi_end_date);
+        const mismatch = diff !== null && diff > 30;
+        return (
+          <div className="flex items-center gap-1.5 text-[--text-muted] text-[10px]">
+            <Calendar className="w-3 h-3" />
+            <span className="font-mono">{fmtDate(opp.poly_end_date)}</span>
+            {mismatch && (
+              <span className="flex items-center gap-0.5 text-amber-500">
+                <AlertTriangle className="w-2.5 h-2.5" /> {Math.round(diff)}d off
+              </span>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -181,7 +227,7 @@ function ArbitrageContent() {
   const [search, setSearch] = useState(searchParams.get("event") || "");
   const [category, setCategory] = useState("All");
   const [minProfit, setMinProfit] = useState(0);
-  const [sortBy, setSortBy] = useState<"profit" | "spread" | "match">("profit");
+  const [sortBy, setSortBy] = useState<"profit" | "spread" | "match" | "date">("profit");
 
   useEffect(() => {
     fetchArbitrageOpportunities().then((d) => { setOpps(d); setLoading(false); });
@@ -202,11 +248,16 @@ function ArbitrageContent() {
           const matchCat = category === "All" || categoryFromEvent(o.poly_event) === category;
           return matchSearch && matchCat && o.net_profit_pct >= minProfit;
         })
-        .sort((a, b) =>
-          sortBy === "profit" ? b.net_profit_pct - a.net_profit_pct
-          : sortBy === "spread" ? b.gross_spread - a.gross_spread
-          : b.outcome_score - a.outcome_score
-        ),
+        .sort((a, b) => {
+          if (sortBy === "profit") return b.net_profit_pct - a.net_profit_pct;
+          if (sortBy === "spread") return b.gross_spread - a.gross_spread;
+          if (sortBy === "date") {
+            const da = a.poly_end_date || "9999-12-31";
+            const db = b.poly_end_date || "9999-12-31";
+            return da < db ? -1 : da > db ? 1 : 0;
+          }
+          return b.outcome_score - a.outcome_score;
+        }),
     [opps, search, category, minProfit, sortBy]
   );
 
@@ -311,7 +362,7 @@ function ArbitrageContent() {
           </div>
           <div className="flex items-center gap-1.5">
             <span className="text-[--text-muted] text-xs">Sort:</span>
-            {(["profit", "spread", "match"] as const).map((s) => (
+            {(["profit", "spread", "date", "match"] as const).map((s) => (
               <button key={s} onClick={() => setSortBy(s)}
                 className={`btn-pill px-2.5 py-1.5 rounded-lg text-xs font-medium capitalize ${
                   sortBy === s
@@ -357,6 +408,9 @@ function ArbitrageContent() {
                     </th>
                     <th className="text-center px-4 py-3.5 text-[--text-muted] font-medium text-xs">Spread</th>
                     <th className="text-center px-4 py-3.5 text-[--text-muted] font-medium text-xs">Net Profit</th>
+                    <th className="text-center px-4 py-3.5 text-[--text-muted] font-medium text-xs">
+                      <span className="flex items-center justify-center gap-1"><Calendar className="w-3 h-3" /> Resolves</span>
+                    </th>
                     <th className="w-16" />
                   </tr>
                 </thead>

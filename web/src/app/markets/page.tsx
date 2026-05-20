@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, TrendingUp, Filter, ChevronDown, ChevronUp, ArrowRight, ExternalLink } from "lucide-react";
+import { Search, TrendingUp, Filter, ChevronDown, ChevronUp, ArrowRight, ExternalLink, Calendar, AlertTriangle } from "lucide-react";
 import { fetchMatchedMarkets, type GroupedMarket, type MatchedMarket, categoryFromEvent } from "@/lib/csv";
 import { PolymarketLogo, KalshiLogo } from "@/components/PlatformLogos";
 
@@ -13,6 +13,21 @@ const CATEGORY_COLORS: Record<string, string> = {
   Tech:      "text-violet-600 dark:text-violet-400 bg-violet-500/8 border-violet-500/20",
   Other:     "text-[--text-muted] bg-[--bg-subtle] border-[--border]",
 };
+
+function fmtDate(d?: string | null): string {
+  if (!d) return "—";
+  const dt = new Date(d + "T00:00:00Z");
+  if (isNaN(dt.getTime())) return "—";
+  return dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+}
+
+function dateDiffDays(a?: string | null, b?: string | null): number | null {
+  if (!a || !b) return null;
+  const da = new Date(a + "T00:00:00Z").getTime();
+  const db = new Date(b + "T00:00:00Z").getTime();
+  if (isNaN(da) || isNaN(db)) return null;
+  return Math.abs(da - db) / (1000 * 60 * 60 * 24);
+}
 
 function pct(v: number | undefined): string {
   if (v == null) return "—";
@@ -191,6 +206,29 @@ function MarketCard({
             {group.kalshi_event !== group.poly_event && (
               <p className="text-[--text-muted] text-xs mt-1 truncate">Kalshi: {group.kalshi_event}</p>
             )}
+            {/* End date comparison */}
+            {(group.poly_end_date || group.kalshi_end_date) && (() => {
+              const diff = dateDiffDays(group.poly_end_date, group.kalshi_end_date);
+              const mismatch = diff !== null && diff > 30;
+              return (
+                <div className="flex items-center gap-3 mt-1.5 text-[10px] text-[--text-muted]">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    <span className="text-[#1652F0] dark:text-[#5b8df8]">Poly</span>
+                    <span className="font-mono">{fmtDate(group.poly_end_date)}</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="text-[--kalshi-teal]">Kalshi</span>
+                    <span className="font-mono">{fmtDate(group.kalshi_end_date)}</span>
+                  </span>
+                  {mismatch && (
+                    <span className="flex items-center gap-0.5 text-amber-500 font-medium">
+                      <AlertTriangle className="w-2.5 h-2.5" /> {Math.round(diff!)}d apart
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Platform links */}

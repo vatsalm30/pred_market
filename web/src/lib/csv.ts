@@ -13,6 +13,8 @@ export interface MatchedMarket {
   kalshi_no_ask?: number;
   poly_url?: string;
   kalshi_url?: string;
+  poly_end_date?: string;
+  kalshi_end_date?: string;
 }
 
 export interface ArbitrageOpportunity {
@@ -34,6 +36,8 @@ export interface ArbitrageOpportunity {
   net_profit_pct: number;
   poly_url: string;
   kalshi_url: string;
+  poly_end_date?: string;
+  kalshi_end_date?: string;
 }
 
 export interface GroupedMarket {
@@ -43,6 +47,8 @@ export interface GroupedMarket {
   outcomes: MatchedMarket[];
   poly_url: string | null;
   kalshi_url: string | null;
+  poly_end_date: string | null;
+  kalshi_end_date: string | null;
 }
 
 export async function fetchMatchedMarkets(): Promise<GroupedMarket[]> {
@@ -88,6 +94,8 @@ export async function fetchMatchedMarkets(): Promise<GroupedMarket[]> {
         outcomes: [],
         poly_url: polyUrl,
         kalshi_url: kalshiUrl,
+        poly_end_date: row.poly_end_date || null,
+        kalshi_end_date: row.kalshi_end_date || null,
       };
     }
     // Ensure each outcome also has its own URL (for per-outcome deep links)
