@@ -2,8 +2,16 @@ name: Refresh market data
 
 on:
   schedule:
+    # Price refresh — every hour (fast, no full market scan)
     - cron: '0 * * * *'
+    # Full rediscovery — once per day at 2am UTC (fetches all markets, updates match list)
+    - cron: '0 2 * * *'
   workflow_dispatch:
+    inputs:
+      full:
+        description: 'Run full market rediscovery (slow)'
+        required: false
+        default: 'false'
 
 permissions:
   contents: write
@@ -13,8 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-python@v5
         with:
@@ -24,10 +30,32 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Restore matched_markets cache
+        uses: actions/cache@v4
+        with:
+          path: matched_markets.csv
+          key: matched-markets-${{ runner.os }}
+
       - name: Run pipeline
         env:
           KALSHI_API_KEY: ${{ secrets.KALSHI_API_KEY }}
-        run: python run_pipeline.py
+        run: |
+          # Run full mode at 2am or when manually requested
+          HOUR=$(date -u +%H)
+          MANUAL_FULL="${{ github.event.inputs.full }}"
+          if [ "$HOUR" = "02" ] || [ "$MANUAL_FULL" = "true" ]; then
+            echo "Running full mode"
+            python run_pipeline.py --full
+          else
+            echo "Running price refresh mode"
+            python run_pipeline.py
+          fi
+
+      - name: Save matched_markets cache
+        uses: actions/cache/save@v4
+        with:
+          path: matched_markets.csv
+          key: matched-markets-${{ runner.os }}
 
       - name: Commit updated data
         run: |

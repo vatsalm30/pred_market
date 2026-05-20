@@ -16,11 +16,43 @@ const MARKET_DATA_URL = process.env.MARKET_DATA_URL ?? "";
 const REFRESH_MS = parseInt(process.env.REFRESH_MS ?? "2100000");
 
 // ── RSA-PSS signing for Kalshi WS auth ───────────────────────────────────────
+function loadPrivateKey(): crypto.KeyObject | null {
+  if (!PRIVATE_KEY_PEM) return null;
+
+  // Try PKCS#8 PEM first (BEGIN PRIVATE KEY)
+  try {
+    const key = crypto.createPrivateKey({ key: PRIVATE_KEY_PEM, format: "pem" });
+    console.log(`Private key loaded: ${key.asymmetricKeyType}`);
+    return key;
+  } catch {}
+
+  // Fallback: PKCS#1 RSA key (BEGIN RSA PRIVATE KEY) via explicit DER decode
+  // Node 18+ with OpenSSL 3 rejects PKCS#1 PEM directly; loading as DER with type:'pkcs1' works.
+  try {
+    const b64 = PRIVATE_KEY_PEM
+      .replace(/-----BEGIN [^-]+-----/, "")
+      .replace(/-----END [^-]+-----/, "")
+      .replace(/\s+/g, "");
+    const der = Buffer.from(b64, "base64");
+    const key = crypto.createPrivateKey({ key: der, format: "der", type: "pkcs1" });
+    console.log(`Private key loaded: ${key.asymmetricKeyType} (PKCS#1 via DER fallback)`);
+    return key;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const preview = PRIVATE_KEY_PEM.slice(0, 50).replace(/\n/g, "\\n");
+    console.error(`Failed to load private key (${PRIVATE_KEY_PEM.length} chars, starts: ${preview}): ${msg}`);
+    return null;
+  }
+}
+
+let privateKey: crypto.KeyObject | null = null;
+
 function kalshiSignature(timestampMs: number): string {
+  if (!privateKey) throw new Error("RSA private key not loaded");
   const message = `${timestampMs}GET/trade-api/ws/v2`;
   return crypto
     .sign("sha256", Buffer.from(message), {
-      key: PRIVATE_KEY_PEM,
+      key: privateKey,
       padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
       saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST,
     })
@@ -62,19 +94,26 @@ function connectKalshi(tickers: string[]) {
     kalshiWs.close();
   }
 
-  if (!API_KEY_ID || !PRIVATE_KEY_PEM || tickers.length === 0) {
+  if (!API_KEY_ID || !privateKey || tickers.length === 0) {
     console.warn("Kalshi WS: missing credentials or empty ticker list — skipping");
     return;
   }
 
-  const ts = Date.now();
-  kalshiWs = new WebSocket(KALSHI_WS_URL, {
-    headers: {
-      "KALSHI-ACCESS-KEY": API_KEY_ID,
-      "KALSHI-ACCESS-SIGNATURE": kalshiSignature(ts),
-      "KALSHI-ACCESS-TIMESTAMP": ts.toString(),
-    },
-  });
+  let sig: string;
+  try {
+    const ts = Date.now();
+    sig = kalshiSignature(ts);
+    kalshiWs = new WebSocket(KALSHI_WS_URL, {
+      headers: {
+        "KALSHI-ACCESS-KEY": API_KEY_ID,
+        "KALSHI-ACCESS-SIGNATURE": sig,
+        "KALSHI-ACCESS-TIMESTAMP": ts.toString(),
+      },
+    });
+  } catch (err) {
+    console.error("Kalshi WS: failed to sign request —", err instanceof Error ? err.message : err);
+    return;
+  }
 
   kalshiWs.on("open", () => {
     console.log(`Kalshi WS connected. Subscribing to ${tickers.length} markets...`);
@@ -156,6 +195,7 @@ wss.on("connection", (ws, req) => {
 
 // ── Startup ───────────────────────────────────────────────────────────────────
 async function init() {
+  privateKey = loadPrivateKey();
   kalshiTickers = await fetchMarketTickers();
   connectKalshi(kalshiTickers);
 
