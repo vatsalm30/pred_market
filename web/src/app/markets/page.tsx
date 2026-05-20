@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Search, TrendingUp, Filter, ChevronDown, ChevronUp, ArrowRight, ExternalLink, Calendar, AlertTriangle } from "lucide-react";
 import { fetchMatchedMarkets, type GroupedMarket, type MatchedMarket, categoryFromEvent } from "@/lib/csv";
 import { PolymarketLogo, KalshiLogo } from "@/components/PlatformLogos";
+import EventIcon from "@/components/EventIcon";
 
 const CATEGORY_COLORS: Record<string, string> = {
   Politics:  "text-blue-500  dark:text-blue-400  bg-blue-500/8   border-blue-500/20",
@@ -197,7 +198,10 @@ function MarketCard({
       {/* Header */}
       <div className="px-5 py-4 border-b border-[--border-subtle]">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
+          {/* Icon + text */}
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <EventIcon src={group.event_icon} alt={group.poly_event} size={48} className="mt-0.5" />
+            <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${catClass}`}>{category}</span>
               <span className="text-[--text-muted] text-xs">{group.outcomes.length} outcome{group.outcomes.length !== 1 ? "s" : ""}</span>
@@ -230,6 +234,7 @@ function MarketCard({
               );
             })()}
           </div>
+          </div>{/* end icon+text wrapper */}
 
           {/* Platform links */}
           <div className="flex gap-2 shrink-0">

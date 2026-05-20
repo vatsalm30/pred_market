@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Zap, Search, Filter, ArrowUpRight, Info, ExternalLink, Radio, Calendar, AlertTriangle } from "lucide-react";
 import { fetchArbitrageOpportunities, type ArbitrageOpportunity, categoryFromEvent } from "@/lib/csv";
 import { PolymarketLogo, KalshiLogo } from "@/components/PlatformLogos";
+import EventIcon from "@/components/EventIcon";
 import { useLivePrices } from "@/hooks/useLivePrices";
 
 function fmtDate(d?: string): string {
@@ -92,8 +93,13 @@ function DesktopRow({
   return (
     <tr className="border-b border-[--border-subtle] hover:bg-[--surface-hover] transition-colors group">
       <td className="px-5 py-4">
-        <p className="text-[--text-primary] font-medium text-sm">{opp.poly_event}</p>
-        <p className="text-[--text-muted] text-xs mt-0.5">{opp.poly_label}</p>
+        <div className="flex items-center gap-3">
+          <EventIcon src={opp.event_icon} alt={opp.poly_event} size={36} className="shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[--text-primary] font-medium text-sm leading-snug">{opp.poly_event}</p>
+            <p className="text-[--text-muted] text-xs mt-0.5">{opp.poly_label}</p>
+          </div>
+        </div>
       </td>
       <td className="px-4 py-4">
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${CATEGORY_COLORS[category]}`}>
@@ -157,9 +163,12 @@ function MobileCard({
   return (
     <div className="mobile-arb-card surface rounded-xl p-4">
       <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex-1 min-w-0">
-          <p className="text-[--text-primary] font-medium text-sm leading-snug">{opp.poly_event}</p>
-          <p className="text-[--text-muted] text-xs mt-0.5">{opp.poly_label}</p>
+        <div className="flex items-start gap-2.5 flex-1 min-w-0">
+          <EventIcon src={opp.event_icon} alt={opp.poly_event} size={36} className="shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <p className="text-[--text-primary] font-medium text-sm leading-snug">{opp.poly_event}</p>
+            <p className="text-[--text-muted] text-xs mt-0.5">{opp.poly_label}</p>
+          </div>
         </div>
         <ProfitBadge pct={opp.net_profit_pct} />
       </div>

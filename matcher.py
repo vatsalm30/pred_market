@@ -42,6 +42,7 @@ def fetch_poly_events_gamma() -> list:
                 m["_event_title"]    = event.get("title", "")
                 m["_event_url"]      = event_url
                 m["_event_end_date"] = (event.get("endDate") or "")[:10]  # keep YYYY-MM-DD only
+                m["_event_icon"]     = event.get("icon") or event.get("image") or ""
                 flat_markets.append(m)
         if len(batch) < 100:
             break
@@ -125,7 +126,13 @@ def _poly_price_entry(m: dict) -> dict:
         no_ask  = float(prices[1]) if len(prices) > 1 else None
     except Exception:
         yes_ask = no_ask = None
-    return {"yes_ask": yes_ask, "no_ask": no_ask, "url": m.get("_event_url"), "end_date": m.get("_event_end_date", "")}
+    return {
+        "yes_ask":  yes_ask,
+        "no_ask":   no_ask,
+        "url":      m.get("_event_url"),
+        "end_date": m.get("_event_end_date", ""),
+        "icon":     m.get("_event_icon", ""),
+    }
 
 poly_price_map = {str(m.get("id", "")): _poly_price_entry(m) for m in poly_markets_raw}
 def _kalshi_end_date(m) -> str:
@@ -255,6 +262,7 @@ for ev in event_matches:
             "poly_no_ask":      pp.get("no_ask"),
             "poly_url":         pp.get("url"),
             "poly_end_date":    pp.get("end_date", ""),
+            "event_icon":       pp.get("icon", ""),
             "kalshi_yes_ask":   kp.get("yes_ask"),
             "kalshi_no_ask":    kp.get("no_ask"),
             "kalshi_url":       kp.get("url"),
