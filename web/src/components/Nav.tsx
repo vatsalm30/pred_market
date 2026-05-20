@@ -8,7 +8,7 @@ import ThemeToggle from "./ThemeToggle";
 import { OddsArbLogo } from "./Logo";
 
 const links = [
-  { href: "/markets", label: "Compare Markets" },
+  { href: "/events", label: "All Markets" },
   { href: "/arbitrage", label: "Arbitrage" },
 ];
 

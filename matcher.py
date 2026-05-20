@@ -42,7 +42,9 @@ def fetch_poly_events_gamma() -> list:
                 m["_event_title"]    = event.get("title", "")
                 m["_event_url"]      = event_url
                 m["_event_end_date"] = (event.get("endDate") or "")[:10]  # keep YYYY-MM-DD only
-                m["_event_icon"]     = event.get("icon") or event.get("image") or ""
+                m["_event_icon"]      = event.get("icon") or event.get("image") or ""
+                m["_event_volume"]    = float(event.get("volume")    or event.get("volumeNum")    or 0)
+                m["_event_volume_24h"] = float(event.get("volume24hr") or event.get("volume24hrClob") or 0)
                 flat_markets.append(m)
         if len(batch) < 100:
             break
@@ -127,11 +129,13 @@ def _poly_price_entry(m: dict) -> dict:
     except Exception:
         yes_ask = no_ask = None
     return {
-        "yes_ask":  yes_ask,
-        "no_ask":   no_ask,
-        "url":      m.get("_event_url"),
-        "end_date": m.get("_event_end_date", ""),
-        "icon":     m.get("_event_icon", ""),
+        "yes_ask":    yes_ask,
+        "no_ask":     no_ask,
+        "url":        m.get("_event_url"),
+        "end_date":   m.get("_event_end_date", ""),
+        "icon":       m.get("_event_icon", ""),
+        "volume":     m.get("_event_volume",    0),
+        "volume_24h": m.get("_event_volume_24h", 0),
     }
 
 poly_price_map = {str(m.get("id", "")): _poly_price_entry(m) for m in poly_markets_raw}
@@ -146,10 +150,12 @@ def _kalshi_end_date(m) -> str:
 
 kalshi_price_map = {
     str(m.market_id): {
-        "yes_ask":  m.yes.price if (hasattr(m, "yes") and m.yes) else None,
-        "no_ask":   m.no.price  if (hasattr(m, "no")  and m.no)  else None,
-        "url":      getattr(m, "url", None) or _kalshi_url(str(m.market_id)),
-        "end_date": _kalshi_end_date(m),
+        "yes_ask":    m.yes.price if (hasattr(m, "yes") and m.yes) else None,
+        "no_ask":     m.no.price  if (hasattr(m, "no")  and m.no)  else None,
+        "url":        getattr(m, "url", None) or _kalshi_url(str(m.market_id)),
+        "end_date":   _kalshi_end_date(m),
+        "volume":     float(getattr(m, "volume",     0) or 0),
+        "volume_24h": float(getattr(m, "volume_24h", 0) or 0),
     }
     for m in kalshi_markets_raw
 }
@@ -267,9 +273,109 @@ for ev in event_matches:
             "kalshi_no_ask":    kp.get("no_ask"),
             "kalshi_url":       kp.get("url"),
             "kalshi_end_date":  kp.get("end_date", ""),
+            "poly_volume":      pp.get("volume",   0),
+            "kalshi_volume":    kp.get("volume",   0),
         })
 
 df_out = pd.DataFrame(rows)
 df_out.to_csv("matched_markets.csv", index=False)
 print(f"Written {len(df_out)} outcome-level pairs to matched_markets.csv")
 print(df_out.head(20).to_string())
+
+
+# ── STEP 8: EXPORT ALL EVENTS ─────────────────────────────────────────────────
+
+def _cat(event: str) -> str:
+    lower = event.lower()
+    if re.search(r'election|president|senate|congress|governor|prime minister|ballot|vote|poll', lower):
+        return 'Politics'
+    if re.search(r'fifa|world cup|nba|nfl|pga|tennis|soccer|basketball|baseball|hockey|sport|golf|tournament|champion', lower):
+        return 'Sports'
+    if re.search(r'bitcoin|crypto|eth|fed|rate|gdp|economy|inflation|recession|stock|dollar', lower):
+        return 'Economics'
+    if re.search(r'\bai\b|tech|apple|elon|musk|openai|spacex|tesla', lower):
+        return 'Tech'
+    return 'Other'
+
+def _slug(title: str, prefix: str = "") -> str:
+    return (prefix + re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-'))[:80]
+
+matched_poly_set   = {e["poly_event"]   for e in event_matches}
+matched_kalshi_set = {e["kalshi_event"] for e in event_matches}
+poly_to_match      = {e["poly_event"]: e for e in event_matches}
+
+def _max_yes(price_map, market_ids):
+    prices = [price_map.get(str(mid), {}).get("yes_ask") for mid in market_ids]
+    prices = [p for p in prices if p is not None]
+    return max(prices) if prices else None
+
+all_event_list = []
+
+for _, row in poly_events.iterrows():
+    pkey  = row["parent"]
+    poids = row["outcomes"]
+    pp    = poly_price_map.get(str(poids[0]), {}) if poids else {}
+    match = poly_to_match.get(pkey)
+
+    entry = {
+        "id":              _slug(pkey),
+        "title":           pkey,
+        "icon":            pp.get("icon", ""),
+        "platforms":       ["polymarket", "kalshi"] if match else ["polymarket"],
+        "poly_url":        pp.get("url"),
+        "kalshi_url":      None,
+        "volume":          pp.get("volume", 0) or 0,
+        "volume_24h":      pp.get("volume_24h", 0) or 0,
+        "end_date":        pp.get("end_date", ""),
+        "category":        _cat(pkey),
+        "yes_price_poly":  _max_yes(poly_price_map, poids),
+        "yes_price_kalshi": None,
+        "num_outcomes":    len(poids),
+        "is_matched":      bool(match),
+        "event_score":     match["event_score"] if match else None,
+    }
+
+    if match:
+        koids = match["kalshi_outcomes"]
+        kp    = kalshi_price_map.get(str(koids[0]), {}) if koids else {}
+        entry["kalshi_url"]       = kp.get("url")
+        entry["yes_price_kalshi"] = _max_yes(kalshi_price_map, koids)
+        # Add Kalshi volume to get combined cross-platform total
+        k_vol     = sum(kalshi_price_map.get(str(mid), {}).get("volume",     0) or 0 for mid in koids)
+        k_vol_24h = sum(kalshi_price_map.get(str(mid), {}).get("volume_24h", 0) or 0 for mid in koids)
+        entry["volume"]     = (entry["volume"]     or 0) + k_vol
+        entry["volume_24h"] = (entry["volume_24h"] or 0) + k_vol_24h
+
+    all_event_list.append(entry)
+
+for _, row in kalshi_events.iterrows():
+    kkey  = row["parent"]
+    if kkey in matched_kalshi_set:
+        continue
+    koids = row["outcomes"]
+    kp    = kalshi_price_map.get(str(koids[0]), {}) if koids else {}
+    k_vol     = sum(kalshi_price_map.get(str(mid), {}).get("volume",     0) or 0 for mid in koids)
+    k_vol_24h = sum(kalshi_price_map.get(str(mid), {}).get("volume_24h", 0) or 0 for mid in koids)
+    all_event_list.append({
+        "id":              _slug(kkey, "kalshi-"),
+        "title":           kkey,
+        "icon":            "",
+        "platforms":       ["kalshi"],
+        "poly_url":        None,
+        "kalshi_url":      kp.get("url"),
+        "volume":          k_vol,
+        "volume_24h":      k_vol_24h,
+        "end_date":        kp.get("end_date", ""),
+        "category":        _cat(kkey),
+        "yes_price_poly":  None,
+        "yes_price_kalshi": kp.get("yes_ask"),
+        "num_outcomes":    len(koids),
+        "is_matched":      False,
+        "event_score":     None,
+    })
+
+all_event_list.sort(key=lambda x: -(x["volume"] or 0))
+
+with open("all_events.json", "w") as _f:
+    json.dump(all_event_list, _f)
+print(f"Written {len(all_event_list)} events to all_events.json")

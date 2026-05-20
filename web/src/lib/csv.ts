@@ -16,6 +16,8 @@ export interface MatchedMarket {
   poly_end_date?: string;
   kalshi_end_date?: string;
   event_icon?: string;
+  poly_volume?: number;
+  kalshi_volume?: number;
 }
 
 export interface ArbitrageOpportunity {
@@ -40,6 +42,8 @@ export interface ArbitrageOpportunity {
   poly_end_date?: string;
   kalshi_end_date?: string;
   event_icon?: string;
+  poly_volume?: number;
+  kalshi_volume?: number;
 }
 
 export interface GroupedMarket {
@@ -52,12 +56,40 @@ export interface GroupedMarket {
   poly_end_date: string | null;
   kalshi_end_date: string | null;
   event_icon: string | null;
+  poly_volume: number;
+  kalshi_volume: number;
+  total_volume: number;
+}
+
+export interface AllEvent {
+  id: string;
+  title: string;
+  icon: string;
+  platforms: ("polymarket" | "kalshi")[];
+  poly_url: string | null;
+  kalshi_url: string | null;
+  volume: number;
+  volume_24h: number;
+  end_date: string;
+  category: string;
+  yes_price_poly: number | null;
+  yes_price_kalshi: number | null;
+  num_outcomes: number;
+  is_matched: boolean;
+  event_score: number | null;
+}
+
+// Module-level cache: each URL is fetched at most once per browser session.
+const _fetchCache = new Map<string, Promise<unknown>>();
+function cachedFetch<T>(url: string): Promise<T> {
+  if (!_fetchCache.has(url)) _fetchCache.set(url, fetch(url).then((r) => r.json()));
+  return _fetchCache.get(url) as Promise<T>;
 }
 
 export async function fetchMatchedMarkets(): Promise<GroupedMarket[]> {
-  const [rawRows, arb]: [Record<string, unknown>[], ArbitrageOpportunity[]] = await Promise.all([
-    fetch("/data/matched_markets.json").then((r) => r.json()),
-    fetch("/data/arbitrage_opportunities.json").then((r) => r.json()),
+  const [rawRows, arb] = await Promise.all([
+    cachedFetch<Record<string, unknown>[]>("/data/matched_markets.json"),
+    cachedFetch<ArbitrageOpportunity[]>("/data/arbitrage_opportunities.json"),
   ]);
 
   // Coerce numeric fields that the pipeline may have left as strings
@@ -100,6 +132,9 @@ export async function fetchMatchedMarkets(): Promise<GroupedMarket[]> {
         poly_end_date: row.poly_end_date || null,
         kalshi_end_date: row.kalshi_end_date || null,
         event_icon: row.event_icon || null,
+        poly_volume:    (row.poly_volume    as number) || 0,
+        kalshi_volume:  (row.kalshi_volume  as number) || 0,
+        total_volume:   ((row.poly_volume as number) || 0) + ((row.kalshi_volume as number) || 0),
       };
     }
     // Ensure each outcome also has its own URL (for per-outcome deep links)
@@ -107,11 +142,13 @@ export async function fetchMatchedMarkets(): Promise<GroupedMarket[]> {
     if (!row.kalshi_url && arbUrlMap[key]?.kalshi_url) row.kalshi_url = arbUrlMap[key].kalshi_url;
     grouped[key].outcomes.push(row);
   }
-  return Object.values(grouped).sort((a, b) => b.event_score - a.event_score);
+  return Object.values(grouped).sort((a, b) =>
+    b.total_volume !== a.total_volume ? b.total_volume - a.total_volume : b.event_score - a.event_score
+  );
 }
 
 export async function fetchArbitrageOpportunities(): Promise<ArbitrageOpportunity[]> {
-  return fetch("/data/arbitrage_opportunities.json").then((r) => r.json());
+  return cachedFetch("/data/arbitrage_opportunities.json");
 }
 
 export function formatPct(val: number): string {
@@ -120,6 +157,17 @@ export function formatPct(val: number): string {
 
 export function formatScore(val: number): string {
   return Math.round(val * 100) + "%";
+}
+
+export async function fetchAllEvents(): Promise<AllEvent[]> {
+  return cachedFetch("/data/all_events.json");
+}
+
+export function formatVolume(vol: number): string {
+  if (!vol) return "—";
+  if (vol >= 1_000_000) return `$${(vol / 1_000_000).toFixed(1)}M`;
+  if (vol >= 1_000) return `$${(vol / 1_000).toFixed(0)}K`;
+  return `$${vol.toFixed(0)}`;
 }
 
 export function categoryFromEvent(event: string): string {

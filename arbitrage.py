@@ -35,6 +35,8 @@ class Opportunity:
     poly_end_date: str
     kalshi_end_date: str
     event_icon: str
+    poly_volume: float
+    kalshi_volume: float
 
     @property
     def is_strong(self) -> bool:
@@ -106,6 +108,8 @@ def find_arbitrage_opportunities(matches: List[Dict]) -> List[Opportunity]:
                     poly_end_date    = str(m.get("poly_end_date",   "") or ""),
                     kalshi_end_date  = str(m.get("kalshi_end_date", "") or ""),
                     event_icon       = str(m.get("event_icon",       "") or ""),
+                    poly_volume      = float(m.get("poly_volume",     0)  or 0),
+                    kalshi_volume    = float(m.get("kalshi_volume",   0)  or 0),
                 )
             )
 

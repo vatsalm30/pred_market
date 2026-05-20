@@ -55,7 +55,12 @@ def csv_to_json(src, dst, numeric_fields):
 
 csv_to_json("matched_markets.csv", "matched_markets.json",
     ["event_score", "outcome_score", "poly_yes_ask", "poly_no_ask",
-     "kalshi_yes_ask", "kalshi_no_ask"])
+     "kalshi_yes_ask", "kalshi_no_ask", "poly_volume", "kalshi_volume"])
 csv_to_json("arbitrage_opportunities.csv", "arbitrage_opportunities.json",
     ["event_score", "outcome_score", "kalshi_ask", "poly_ask",
-     "gross_cost", "gross_spread", "net_profit_pct"])
+     "gross_cost", "gross_spread", "net_profit_pct", "poly_volume", "kalshi_volume"])
+
+import shutil as _shutil
+if os.path.exists("all_events.json"):
+    _shutil.copy("all_events.json", os.path.join(DATA_DIR, "all_events.json"))
+    print("  all_events.json: copied")
