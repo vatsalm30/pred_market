@@ -23,7 +23,7 @@ function ProfitBadge({ pct }: { pct: number }) {
     : pct > 5  ? "text-amber-600  dark:text-amber-400  bg-amber-500/8  border-amber-500/20"
     :            "text-orange-600 dark:text-orange-400 bg-orange-500/8 border-orange-500/20";
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold font-mono border ${color}`}>
+    <span className={`profit-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold font-mono border ${color}`}>
       <ArrowUpRight className="w-3 h-3" />+{pct.toFixed(1)}%
     </span>
   );
@@ -98,7 +98,7 @@ function DesktopRow({
       </td>
       <td className="px-4 py-4 text-center"><ProfitBadge pct={opp.net_profit_pct} /></td>
       <td className="px-4 py-4">
-        <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="row-actions flex items-center gap-3">
           <a href={opp.poly_url} target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-1 text-xs text-[#1652F0] dark:text-[#5b8df8] hover:opacity-70 transition-opacity">
             <PolymarketLogo size={13} /> <ExternalLink className="w-3 h-3" />
@@ -124,7 +124,7 @@ function MobileCard({
 }) {
   const category = categoryFromEvent(opp.poly_event);
   return (
-    <div className="surface rounded-xl p-4">
+    <div className="mobile-arb-card surface rounded-xl p-4">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
           <p className="text-[--text-primary] font-medium text-sm leading-snug">{opp.poly_event}</p>
@@ -283,7 +283,7 @@ function ArbitrageContent() {
             <span className="text-[--text-muted] text-xs shrink-0">Min:</span>
             {[0, 5, 10, 20].map((v) => (
               <button key={v} onClick={() => setMinProfit(v)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                className={`btn-pill px-2.5 py-1.5 rounded-lg text-xs font-medium ${
                   minProfit === v
                     ? "bg-[--surface] text-[--text-primary] border border-[--border]"
                     : "text-[--text-muted] hover:text-[--text-primary]"
@@ -299,7 +299,7 @@ function ArbitrageContent() {
             <Filter className="w-3.5 h-3.5 text-[--text-muted] shrink-0" />
             {categories.map((c) => (
               <button key={c} onClick={() => setCategory(c)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                className={`btn-pill px-2.5 py-1.5 rounded-lg text-xs font-medium ${
                   category === c
                     ? "bg-[--surface] text-[--text-primary] border border-[--border]"
                     : "text-[--text-muted] hover:text-[--text-primary]"
@@ -313,7 +313,7 @@ function ArbitrageContent() {
             <span className="text-[--text-muted] text-xs">Sort:</span>
             {(["profit", "spread", "match"] as const).map((s) => (
               <button key={s} onClick={() => setSortBy(s)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
+                className={`btn-pill px-2.5 py-1.5 rounded-lg text-xs font-medium capitalize ${
                   sortBy === s
                     ? "bg-[--surface] text-[--text-primary] border border-[--border]"
                     : "text-[--text-muted] hover:text-[--text-primary]"

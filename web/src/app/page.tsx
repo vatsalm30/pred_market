@@ -167,14 +167,14 @@ export default function HomePage() {
           >
             <Link
               href="/markets"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[--text-primary] text-[--bg] font-semibold text-sm hover:opacity-85 transition-opacity"
+              className="btn-lift inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[--text-primary] text-[--bg] font-semibold text-sm"
             >
               See all matched markets
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/arbitrage"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl surface text-[--text-secondary] font-medium text-sm hover:text-[--text-primary] transition-colors"
+              className="btn-lift inline-flex items-center gap-2 px-6 py-3 rounded-xl surface text-[--text-secondary] font-medium text-sm hover:text-[--text-primary] transition-colors"
             >
               <Zap className="w-4 h-4 text-[--arb-amber]" />
               Arbitrage scanner
@@ -220,7 +220,7 @@ export default function HomePage() {
             <h2 className="text-xl font-semibold text-[--text-primary]">A sample of what we track</h2>
             <Link
               href="/markets"
-              className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors flex items-center gap-1"
+              className="link-arrow text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors flex items-center gap-1"
             >
               All markets <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -328,14 +328,14 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row gap-3 shrink-0">
               <Link
                 href="/markets"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[--text-primary] text-[--bg] font-semibold text-sm hover:opacity-85 transition-opacity"
+                className="btn-lift inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[--text-primary] text-[--bg] font-semibold text-sm"
               >
                 <TrendingUp className="w-4 h-4" />
                 Compare Markets
               </Link>
               <Link
                 href="/arbitrage"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[--border] text-[--text-secondary] font-medium text-sm hover:text-[--text-primary] hover:bg-[--surface-hover] transition-colors"
+                className="btn-lift inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[--border] text-[--text-secondary] font-medium text-sm hover:text-[--text-primary] hover:bg-[--surface-hover] transition-colors"
               >
                 <Zap className="w-4 h-4 text-[--arb-amber]" />
                 Scan for Arb

@@ -22,6 +22,10 @@ export const metadata: Metadata = {
     description: "Side-by-side odds comparison across prediction market platforms.",
   },
   twitter: { card: "summary_large_image" },
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+  },
 };
 
 const themeScript = `
