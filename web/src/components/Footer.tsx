@@ -42,7 +42,7 @@ export default function Footer() {
             <div>
               <p className="text-xs font-medium text-[--text-muted] uppercase tracking-wider mb-3">Contact</p>
               <ul className="space-y-2">
-                <li><a href="mailto:vatsal@intersticedigital.io" className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors">Get in touch</a></li>
+                <li><a href="mailto:vatsalm30@gmail.com" className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors">Get in touch</a></li>
               </ul>
             </div>
           </div>
