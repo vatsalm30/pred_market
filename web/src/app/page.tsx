@@ -5,23 +5,24 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useInView, animate } from "framer-motion";
 import { ArrowRight, Zap, TrendingUp } from "lucide-react";
 import { PolymarketLogo, KalshiLogo } from "@/components/PlatformLogos";
+import { fetchAllEvents, fetchMatchedMarkets, fetchArbitrageOpportunities, formatVolume } from "@/lib/csv";
 
 /* ── Animated counter ────────────────────────────────────── */
-function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
+function Counter({ to, suffix = "", prefix = "" }: { to: number; suffix?: string; prefix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
   useEffect(() => {
     if (!inView || !ref.current) return;
     const ctrl = animate(0, to, {
-      duration: 1.4,
+      duration: 1.6,
       ease: [0.16, 1, 0.3, 1],
       onUpdate: (v) => {
-        if (ref.current) ref.current.textContent = Math.round(v) + suffix;
+        if (ref.current) ref.current.textContent = prefix + Math.round(v).toLocaleString() + suffix;
       },
     });
     return () => ctrl.stop();
-  }, [inView, to, suffix]);
-  return <span ref={ref}>0{suffix}</span>;
+  }, [inView, to, suffix, prefix]);
+  return <span ref={ref}>{prefix}0{suffix}</span>;
 }
 
 /* ── Reveal wrapper ──────────────────────────────────────── */
@@ -44,15 +45,17 @@ function Reveal({ children, delay = 0, className = "" }: { children: React.React
 /* ── Scrolling ticker ────────────────────────────────────── */
 const TICKER_ITEMS = [
   { label: "2026 FIFA World Cup Winner", platform: "poly" as const },
-  { label: "NBA MVP", platform: "kalshi" as const },
+  { label: "NBA Champion", platform: "kalshi" as const },
   { label: "Brazil Presidential Election", platform: "poly" as const },
   { label: "2026 French Open", platform: "kalshi" as const },
   { label: "Republican Primary 2028", platform: "poly" as const },
   { label: "California Governor", platform: "kalshi" as const },
   { label: "PGA Championship", platform: "poly" as const },
-  { label: "Seoul Mayoral Election", platform: "kalshi" as const },
+  { label: "Fed Rate Decision", platform: "kalshi" as const },
   { label: "Congress Balance of Power", platform: "poly" as const },
   { label: "Israel Prime Minister", platform: "kalshi" as const },
+  { label: "Bitcoin price end of year", platform: "poly" as const },
+  { label: "Stanley Cup Champion", platform: "kalshi" as const },
 ];
 
 function Ticker() {
@@ -75,60 +78,48 @@ function Ticker() {
   );
 }
 
-/* ── Sample markets for the preview table ────────────────── */
-const PREVIEW_MARKETS = [
-  {
-    event: "2026 FIFA World Cup",
-    outcome: "Spain",
-    poly: "16.2%",
-    kalshi: "14.1%",
-    gap: "+2.1pp",
-    category: "Sports",
-  },
-  {
-    event: "2028 GOP Primary",
-    outcome: "Donald Trump",
-    poly: "41.0%",
-    kalshi: "38.0%",
-    gap: "+3.0pp",
-    category: "Politics",
-  },
-  {
-    event: "NBA MVP",
-    outcome: "Shai Gilgeous-Alexander",
-    poly: "31.0%",
-    kalshi: "28.0%",
-    gap: "+3.0pp",
-    category: "Sports",
-  },
-  {
-    event: "Brazil Presidential",
-    outcome: "Lula da Silva",
-    poly: "44.0%",
-    kalshi: "41.0%",
-    gap: "+3.0pp",
-    category: "Politics",
-  },
-];
-
 /* ── Main page ───────────────────────────────────────────── */
 export default function HomePage() {
   const [heroReady, setHeroReady] = useState(false);
+  const [stats, setStats] = useState<{
+    totalMarkets: number;
+    matchedEvents: number;
+    outcomePairs: number;
+    arbOpps: number;
+    totalVolume: number;
+  } | null>(null);
+
   useEffect(() => {
     const t = setTimeout(() => setHeroReady(true), 50);
     return () => clearTimeout(t);
   }, []);
 
+  useEffect(() => {
+    Promise.all([
+      fetchAllEvents(),
+      fetchMatchedMarkets(),
+      fetchArbitrageOpportunities(),
+    ]).then(([events, matched, arb]) => {
+      setStats({
+        totalMarkets:  events.length,
+        matchedEvents: matched.length,
+        outcomePairs:  matched.reduce((s, g) => s + g.outcomes.length, 0),
+        arbOpps:       arb.length,
+        totalVolume:   events.reduce((s, e) => s + (e.volume || 0), 0),
+      });
+    });
+  }, []);
+
   return (
     <div className="overflow-x-hidden">
       {/* ── Hero ─────────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-12 sm:pb-16">
         {/* Platform logos — floating */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={heroReady ? { opacity: 1 } : {}}
           transition={{ duration: 0.8 }}
-          className="flex items-center gap-3 mb-10"
+          className="flex items-center gap-3 mb-8 sm:mb-10"
         >
           <div className="float-a">
             <PolymarketLogo size={36} />
@@ -145,7 +136,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 30 }}
             animate={heroReady ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.06] text-[--text-primary] mb-6"
+            className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.06] text-[--text-primary] mb-5 sm:mb-6"
           >
             Compare odds across prediction markets
           </motion.h1>
@@ -154,7 +145,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={heroReady ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.7, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="text-[--text-secondary] text-lg sm:text-xl leading-relaxed max-w-xl mb-10"
+            className="text-[--text-secondary] text-base sm:text-xl leading-relaxed max-w-xl mb-8 sm:mb-10"
           >
             Polymarket and Kalshi are pricing the same events differently. We match them up and show you where the gaps are.
           </motion.p>
@@ -167,14 +158,14 @@ export default function HomePage() {
           >
             <Link
               href="/events?view=compare"
-              className="btn-lift inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[--text-primary] text-[--bg] font-semibold text-sm"
+              className="btn-lift inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[--text-primary] text-[--bg] font-semibold text-sm"
             >
-              See all matched markets
+              See matched markets
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/arbitrage"
-              className="btn-lift inline-flex items-center gap-2 px-6 py-3 rounded-xl surface text-[--text-secondary] font-medium text-sm hover:text-[--text-primary] transition-colors"
+              className="btn-lift inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl surface text-[--text-secondary] font-medium text-sm hover:text-[--text-primary] transition-colors"
             >
               <Zap className="w-4 h-4 text-[--arb-amber]" />
               Arbitrage scanner
@@ -192,23 +183,57 @@ export default function HomePage() {
         <Ticker />
       </motion.div>
 
-      {/* ── Stats — not a grid, prose-embedded ───────────── */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      {/* ── Live stat strip ──────────────────────────────── */}
+      <motion.section
+        initial={{ opacity: 0 }}
+        animate={heroReady ? { opacity: 1 } : {}}
+        transition={{ duration: 0.6, delay: 0.6 }}
+        className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14"
+      >
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          {[
+            { label: "Markets tracked",   value: stats?.totalMarkets,  suffix: "" },
+            { label: "Matched events",    value: stats?.matchedEvents, suffix: "" },
+            { label: "Outcome pairs",     value: stats?.outcomePairs,  suffix: "" },
+            { label: "Arb opportunities", value: stats?.arbOpps,       suffix: "" },
+          ].map((s, i) => (
+            <Reveal key={i} delay={i * 0.06}>
+              <div className="surface rounded-2xl px-4 sm:px-5 py-4 sm:py-5">
+                <p className="text-[10px] uppercase tracking-widest text-[--text-muted] font-medium mb-1.5">{s.label}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-[--text-primary] tabular-nums">
+                  {s.value != null ? s.value.toLocaleString() : "—"}
+                </p>
+                {i === 0 && stats && (
+                  <p className="text-[11px] text-[--text-muted] mt-0.5">{formatVolume(stats.totalVolume)} total vol</p>
+                )}
+                {i === 3 && (
+                  <p className="text-[11px] text-[--kalshi-teal] mt-0.5 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[--kalshi-teal] live-dot" /> Live
+                  </p>
+                )}
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </motion.section>
+
+      {/* ── Stats prose ──────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
         <Reveal>
-          <p className="text-[--text-secondary] text-base leading-loose max-w-2xl">
+          <p className="text-[--text-secondary] text-base sm:text-lg leading-loose max-w-2xl">
             Right now we track{" "}
             <strong className="text-[--text-primary] font-semibold tabular-nums">
-              <Counter to={33} suffix="+" />
+              <Counter to={stats?.matchedEvents ?? 1309} />
             </strong>{" "}
             matched events across both platforms, covering{" "}
             <strong className="text-[--text-primary] font-semibold tabular-nums">
-              <Counter to={505} suffix="+" />
+              <Counter to={stats?.outcomePairs ?? 5742} />
             </strong>{" "}
-            individual outcome pairs. Wherever prices diverge, we surface it. There are{" "}
+            individual outcome pairs. Wherever prices diverge, we surface it. There are currently{" "}
             <strong className="text-[--text-primary] font-semibold tabular-nums">
-              <Counter to={289} suffix="+" />
+              <Counter to={stats?.arbOpps ?? 2461} />
             </strong>{" "}
-            arbitrage opportunities in the current snapshot.
+            arbitrage opportunities in the live snapshot.
           </p>
         </Reveal>
       </section>
@@ -249,7 +274,13 @@ export default function HomePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {PREVIEW_MARKETS.map((m, i) => (
+                  {[
+                    { event: "2026 FIFA World Cup",    outcome: "Spain",                       poly: "16.2%", kalshi: "14.1%", gap: "+2.1pp", cat: "Sports"   },
+                    { event: "2028 GOP Primary",       outcome: "Donald Trump",                poly: "41.0%", kalshi: "38.0%", gap: "+3.0pp", cat: "Politics" },
+                    { event: "NBA MVP",                outcome: "Shai Gilgeous-Alexander",     poly: "31.0%", kalshi: "28.0%", gap: "+3.0pp", cat: "Sports"   },
+                    { event: "Brazil Presidential",    outcome: "Lula da Silva",               poly: "44.0%", kalshi: "41.0%", gap: "+3.0pp", cat: "Politics" },
+                    { event: "Fed Rate Decision",      outcome: "Cut by 25bps",                poly: "38.0%", kalshi: "35.0%", gap: "+3.0pp", cat: "Economics"},
+                  ].map((m, i) => (
                     <motion.tr
                       key={i}
                       initial={{ opacity: 0, x: -10 }}
@@ -276,13 +307,13 @@ export default function HomePage() {
       </section>
 
       {/* ── How it works ─────────────────────────────────── */}
-      <section className="border-t border-[--border-subtle] py-20">
+      <section className="border-t border-[--border-subtle] py-16 sm:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <Reveal>
-            <h2 className="text-2xl font-semibold text-[--text-primary] mb-12">How it works</h2>
+            <h2 className="text-2xl font-semibold text-[--text-primary] mb-10 sm:mb-12">How it works</h2>
           </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-8 sm:gap-y-10">
             {[
               {
                 n: "01",
@@ -313,9 +344,9 @@ export default function HomePage() {
       </section>
 
       {/* ── CTA ──────────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
         <Reveal>
-          <div className="surface rounded-2xl px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="surface rounded-2xl px-6 sm:px-8 py-8 sm:py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <PolymarketLogo size={20} />
@@ -323,19 +354,23 @@ export default function HomePage() {
                 <KalshiLogo size={20} />
               </div>
               <h3 className="text-[--text-primary] text-xl font-semibold">Ready to start comparing?</h3>
-              <p className="text-[--text-secondary] text-sm mt-1">See which platform has better odds for the markets you care about.</p>
+              <p className="text-[--text-secondary] text-sm mt-1">
+                {stats
+                  ? `${stats.totalMarkets.toLocaleString()} markets, ${stats.arbOpps.toLocaleString()} arb opportunities right now.`
+                  : "See which platform has better odds for the markets you care about."}
+              </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+            <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full sm:w-auto">
               <Link
                 href="/events?view=compare"
-                className="btn-lift inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[--text-primary] text-[--bg] font-semibold text-sm"
+                className="btn-lift inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[--text-primary] text-[--bg] font-semibold text-sm"
               >
                 <TrendingUp className="w-4 h-4" />
                 Compare Markets
               </Link>
               <Link
                 href="/arbitrage"
-                className="btn-lift inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[--border] text-[--text-secondary] font-medium text-sm hover:text-[--text-primary] hover:bg-[--surface-hover] transition-colors"
+                className="btn-lift inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-[--border] text-[--text-secondary] font-medium text-sm hover:text-[--text-primary] hover:bg-[--surface-hover] transition-colors"
               >
                 <Zap className="w-4 h-4 text-[--arb-amber]" />
                 Scan for Arb

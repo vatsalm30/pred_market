@@ -378,6 +378,8 @@ type ViewMode = "all" | "compare";
 
 const PAGE_SIZE = 24;
 
+const FILTER_STORAGE_KEY = "oddsarb_event_filters";
+
 function AllEventsPage() {
   const searchParams = useSearchParams();
 
@@ -386,13 +388,43 @@ function AllEventsPage() {
   const [loading, setLoading]       = useState(true);
   const [search, setSearch]         = useState(searchParams.get("search") ?? "");
   const [category, setCategory]     = useState("All");
-  // multi-select platform filter: empty = all
   const [platforms, setPlatforms]   = useState<Set<PlatformKey>>(new Set());
   const [sortBy, setSortBy]         = useState<SortKey>("volume");
   const [view, setView]             = useState<ViewMode>((searchParams.get("view") as ViewMode) ?? "all");
   const [page, setPage]             = useState(1);
   const [expanded, setExpanded]     = useState<Record<string, boolean>>({});
+  const [filtersReady, setFiltersReady] = useState(false);
   const sentinelRef                 = useRef<HTMLDivElement>(null);
+
+  // Restore persisted filters once on client mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(FILTER_STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved.category)                        setCategory(saved.category);
+        if (Array.isArray(saved.platforms))        setPlatforms(new Set(saved.platforms as PlatformKey[]));
+        if (saved.sortBy)                          setSortBy(saved.sortBy);
+        // URL param takes priority over saved view
+        if (!searchParams.get("view") && saved.view) setView(saved.view);
+      }
+    } catch { /* ignore malformed data */ }
+    setFiltersReady(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist filters whenever they change (after initial restore)
+  useEffect(() => {
+    if (!filtersReady) return;
+    try {
+      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({
+        category,
+        platforms: Array.from(platforms),
+        sortBy,
+        view,
+      }));
+    } catch { /* storage quota/private mode */ }
+  }, [category, platforms, sortBy, view, filtersReady]);
 
   useEffect(() => {
     Promise.all([fetchAllEvents(), fetchMatchedMarkets()]).then(([allEvts, matched]) => {
