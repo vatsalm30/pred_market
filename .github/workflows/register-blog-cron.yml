@@ -1,0 +1,37 @@
+name: Register blog generation cron
+
+on:
+  workflow_dispatch:
+    inputs:
+      cron:
+        description: 'Cron schedule (UTC). Default: daily at 8am.'
+        required: false
+        default: '0 8 * * *'
+      site_url:
+        description: 'Base URL of the deployed site'
+        required: false
+        default: 'https://omnipred.com'
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Register QStash schedule
+        env:
+          QSTASH_TOKEN: ${{ secrets.QSTASH_TOKEN }}
+        run: |
+          DESTINATION="${{ github.event.inputs.site_url }}/api/blog/generate"
+          CRON="${{ github.event.inputs.cron }}"
+
+          echo "Registering schedule: $CRON → $DESTINATION"
+
+          RESPONSE=$(curl -s -X POST "https://qstash.upstash.io/v2/schedules" \
+            -H "Authorization: Bearer $QSTASH_TOKEN" \
+            -H "Upstash-Destination: $DESTINATION" \
+            -H "Upstash-Cron: $CRON" \
+            -H "Upstash-Retries: 3")
+
+          echo "Response: $RESPONSE"
+
+          # Fail if the response doesn't contain a schedule ID
+          echo "$RESPONSE" | grep -q '"scheduleId"' || (echo "Registration failed" && exit 1)

@@ -11,6 +11,7 @@ const links = [
   { href: "/events",    label: "All Markets" },
   { href: "/arbitrage", label: "Arbitrage" },
   { href: "/alerts",    label: "Alerts" },
+  { href: "/blog",      label: "Blog" },
 ];
 
 export default function Nav() {
