@@ -57,11 +57,15 @@ jobs:
           path: matched_markets.csv
           key: matched-markets-${{ runner.os }}
 
+      - name: Generate sitemap
+        run: python generate_sitemap.py
+
       - name: Commit updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add web/public/data/matched_markets.json \
-                  web/public/data/arbitrage_opportunities.json
+                  web/public/data/arbitrage_opportunities.json \
+                  web/public/sitemap.xml
           git diff --staged --quiet || git commit -m "chore: refresh market data [skip ci]"
           git push
