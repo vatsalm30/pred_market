@@ -33,7 +33,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     await addSubscriber(chatId, username);
     await sendMessage(
       chatId,
-      `👋 <b>Welcome to OddsArb Alerts!</b>\n\n` +
+      `👋 <b>Welcome to OmniPred Alerts!</b>\n\n` +
         `You'll receive a message whenever a new arbitrage opportunity appears across Polymarket and Kalshi.\n\n` +
         `Commands:\n` +
         `/stop — unsubscribe\n` +
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const ids = await getSubscriberIds();
     await sendMessage(
       chatId,
-      `📊 <b>OddsArb Bot Status</b>\n\n` +
+      `📊 <b>OmniPred Bot Status</b>\n\n` +
         `Subscribers: <b>${ids.length}</b>\n` +
         `Alert interval: every 10 minutes\n` +
         `Threshold: ≥ 2% net profit`

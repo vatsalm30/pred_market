@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useInView, animate } from "framer-motion";
 import { ArrowRight, Zap, TrendingUp, Bell } from "lucide-react";
 
-const TELEGRAM_BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "oddsarb_bot";
+const TELEGRAM_BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "omnipred_bot";
 const TELEGRAM_URL = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
 import { PolymarketLogo, KalshiLogo, TelegramLogo, TelegramPlaneIcon } from "@/components/PlatformLogos";
 import { fetchAllEvents, fetchMatchedMarkets, fetchArbitrageOpportunities, formatVolume } from "@/lib/csv";

@@ -1,4 +1,4 @@
-# OddsArb — Product Context
+# OmniPred — Product Context
 
 ## Users
 Prediction market enthusiasts, casual traders, quant researchers. People who already have accounts on Polymarket and Kalshi and want to compare odds between them without manually switching tabs. Weekend warriors checking election and sports markets over coffee.

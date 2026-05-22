@@ -6,7 +6,7 @@ import { ArrowRight, Bell, Clock, Users, Activity, ExternalLink } from "lucide-r
 import { PolymarketLogo, KalshiLogo, TelegramLogo, TelegramPlaneIcon } from "@/components/PlatformLogos";
 import type { RecentAlert } from "@/lib/bot";
 
-const TELEGRAM_BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "oddsarb_bot";
+const TELEGRAM_BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "omnipred_bot";
 const TELEGRAM_URL = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
 
 interface BotStats {
@@ -70,7 +70,7 @@ export default function AlertsPage() {
           <div className="flex items-center gap-3 mb-4">
             <TelegramLogo size={44} />
             <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-[--text-primary]">
-              OddsArb Alerts
+              OmniPred Alerts
             </h1>
           </div>
           <p className="text-[--text-secondary] text-base sm:text-xl leading-relaxed max-w-2xl mb-8">

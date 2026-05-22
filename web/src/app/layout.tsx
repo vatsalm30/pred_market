@@ -10,16 +10,16 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | OddsArb",
-    default: "OddsArb — Compare Polymarket vs Kalshi Odds",
+    template: "%s | OmniPred",
+    default: "OmniPred — Compare Polymarket vs Kalshi Odds",
   },
   description:
     "See where Polymarket and Kalshi price the same prediction markets differently. Compare odds side-by-side and find arbitrage opportunities.",
   keywords: ["prediction markets", "polymarket", "kalshi", "odds comparison", "arbitrage", "prediction market data"],
   openGraph: {
     type: "website",
-    siteName: "OddsArb",
-    title: "OddsArb — Compare Polymarket vs Kalshi Odds",
+    siteName: "OmniPred",
+    title: "OmniPred — Compare Polymarket vs Kalshi Odds",
     description: "Side-by-side odds comparison across prediction market platforms.",
   },
   twitter: { card: "summary_large_image" },

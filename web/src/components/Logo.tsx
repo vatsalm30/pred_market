@@ -1,4 +1,4 @@
-export function OddsArbLogo({ size = 24 }: { size?: number }) {
+export function OmnipredLogo({ size = 24 }: { size?: number }) {
   return (
     <svg
       width={size}
@@ -6,7 +6,7 @@ export function OddsArbLogo({ size = 24 }: { size?: number }) {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="OddsArb"
+      aria-label="OmniPred"
     >
       {/* Left semicircle — Polymarket blue */}
       <path

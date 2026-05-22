@@ -10,7 +10,7 @@ const PORT = parseInt(process.env.PORT ?? "8080");
 const API_KEY_ID = process.env.KALSHI_API_KEY_ID ?? "";
 // RSA private key PEM content (export from file or paste as \n-separated string)
 const PRIVATE_KEY_PEM = (process.env.KALSHI_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
-// URL of your hosted matched_markets.json (Vercel URL, e.g. https://oddsarb.vercel.app/data/matched_markets.json)
+// URL of your hosted matched_markets.json (Vercel URL, e.g. https://omnipred.vercel.app/data/matched_markets.json)
 const MARKET_DATA_URL = process.env.MARKET_DATA_URL ?? "";
 // Refresh market subscriptions every N ms (default 35 min, slightly after pipeline cron)
 const REFRESH_MS = parseInt(process.env.REFRESH_MS ?? "2100000");
@@ -212,7 +212,7 @@ async function init() {
   }, REFRESH_MS);
 
   server.listen(PORT, () => {
-    console.log(`OddsArb WS proxy running on :${PORT}`);
+    console.log(`OmniPred WS proxy running on :${PORT}`);
     console.log(`  Kalshi tickers: ${kalshiTickers.length}`);
     console.log(`  Market refresh: every ${REFRESH_MS / 60000} min`);
   });

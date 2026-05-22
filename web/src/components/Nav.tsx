@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Menu, X } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
-import { OddsArbLogo } from "./Logo";
+import { OmnipredLogo } from "./Logo";
 
 const links = [
   { href: "/events",    label: "All Markets" },
@@ -38,9 +38,9 @@ export default function Nav() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <Link href="/" className="nav-logo flex items-center gap-2 min-w-0">
-            <OddsArbLogo size={22} />
-            <span className="font-bold text-base tracking-tight text-[--text-primary] whitespace-nowrap">OddsArb</span>
-            <span className="text-[--text-muted] font-normal text-xs hidden lg:inline truncate">— prediction market comparison</span>
+            <OmnipredLogo size={22} />
+            <span className="font-bold text-base tracking-tight text-[--text-primary] whitespace-nowrap">OmniPred</span>
+            <span className="text-[--text-muted] font-normal text-xs hidden lg:inline truncate">— prediction market data</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">

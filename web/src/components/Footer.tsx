@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex flex-col sm:flex-row items-start justify-between gap-8">
           <div>
-            <p className="font-bold text-[--text-primary] mb-1">OddsArb</p>
+            <p className="font-bold text-[--text-primary] mb-1">OmniPred</p>
             <p className="text-[--text-secondary] text-sm max-w-xs leading-relaxed">
               Cross-platform prediction market comparison. Data sourced directly from Polymarket and Kalshi.
             </p>
@@ -49,7 +49,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <a
-                    href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "oddsarb_bot"}`}
+                    href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "omnipred_bot"}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors"
@@ -68,7 +68,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-[--border-subtle] flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-[--text-muted] text-xs">© {new Date().getFullYear()} OddsArb. Not affiliated with Polymarket or Kalshi.</p>
+          <p className="text-[--text-muted] text-xs">© {new Date().getFullYear()} OmniPred. Not affiliated with Polymarket or Kalshi.</p>
           <p className="text-[--text-muted] text-xs">Not financial advice.</p>
         </div>
       </div>

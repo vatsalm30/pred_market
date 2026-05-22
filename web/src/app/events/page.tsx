@@ -378,7 +378,7 @@ type ViewMode = "all" | "compare";
 
 const PAGE_SIZE = 24;
 
-const FILTER_STORAGE_KEY = "oddsarb_event_filters";
+const FILTER_STORAGE_KEY = "omnipred_event_filters";
 
 function AllEventsPage() {
   const searchParams = useSearchParams();
