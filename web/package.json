@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@types/papaparse": "^5.5.2",
+    "@upstash/qstash": "^2.11.0",
     "@upstash/redis": "^1.38.0",
     "framer-motion": "^12.39.0",
     "lucide-react": "^1.16.0",
