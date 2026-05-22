@@ -10,7 +10,7 @@ on:
       site_url:
         description: 'Base URL of the deployed site'
         required: false
-        default: 'https://omnipred.com'
+        default: 'https://www.omnipred.com'
 
 jobs:
   register:
