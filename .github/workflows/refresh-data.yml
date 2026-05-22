@@ -2,10 +2,10 @@ name: Refresh market data
 
 on:
   schedule:
-    # Price refresh — every hour (fast, no full market scan)
-    - cron: '0 * * * *'
-    # Full rediscovery — once per day at 2am UTC (fetches all markets, updates match list)
-    - cron: '0 2 * * *'
+    # Price refresh — every 30 minutes
+    - cron: '*/30 * * * *'
+    # Full rediscovery — every 2 hours (fetches all markets, updates match list)
+    - cron: '0 */2 * * *'
   workflow_dispatch:
     inputs:
       full:
@@ -40,10 +40,9 @@ jobs:
         env:
           KALSHI_API_KEY: ${{ secrets.KALSHI_API_KEY }}
         run: |
-          # Run full mode at 2am or when manually requested
-          HOUR=$(date -u +%H)
           MANUAL_FULL="${{ github.event.inputs.full }}"
-          if [ "$HOUR" = "02" ] || [ "$MANUAL_FULL" = "true" ]; then
+          SCHEDULE="${{ github.event.schedule }}"
+          if [ "$SCHEDULE" = "0 */2 * * *" ] || [ "$MANUAL_FULL" = "true" ]; then
             echo "Running full mode"
             python run_pipeline.py --full
           else
@@ -57,15 +56,11 @@ jobs:
           path: matched_markets.csv
           key: matched-markets-${{ runner.os }}
 
-      - name: Generate sitemap
-        run: python generate_sitemap.py
-
       - name: Commit updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add web/public/data/matched_markets.json \
-                  web/public/data/arbitrage_opportunities.json \
-                  web/public/sitemap.xml
+                  web/public/data/arbitrage_opportunities.json
           git diff --staged --quiet || git commit -m "chore: refresh market data [skip ci]"
           git push
