@@ -10,6 +10,7 @@ import { OddsArbLogo } from "./Logo";
 const links = [
   { href: "/events",    label: "All Markets" },
   { href: "/arbitrage", label: "Arbitrage" },
+  { href: "/alerts",    label: "Alerts" },
 ];
 
 export default function Nav() {

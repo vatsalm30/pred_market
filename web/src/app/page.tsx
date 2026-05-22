@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView, animate } from "framer-motion";
-import { ArrowRight, Zap, TrendingUp } from "lucide-react";
-import { PolymarketLogo, KalshiLogo } from "@/components/PlatformLogos";
+import { ArrowRight, Zap, TrendingUp, Bell } from "lucide-react";
+
+const TELEGRAM_BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "oddsarb_bot";
+const TELEGRAM_URL = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
+import { PolymarketLogo, KalshiLogo, TelegramLogo, TelegramPlaneIcon } from "@/components/PlatformLogos";
 import { fetchAllEvents, fetchMatchedMarkets, fetchArbitrageOpportunities, formatVolume } from "@/lib/csv";
 
 /* ── Animated counter ────────────────────────────────────── */
@@ -233,7 +236,11 @@ export default function HomePage() {
             <strong className="text-[--text-primary] font-semibold tabular-nums">
               <Counter to={stats?.arbOpps ?? 2461} />
             </strong>{" "}
-            arbitrage opportunities in the live snapshot.
+            arbitrage opportunities in the live snapshot — and our{" "}
+            <Link href="/alerts" className="text-[#229ED9] hover:underline font-medium">
+              Telegram bot
+            </Link>{" "}
+            pings you the moment new ones appear.
           </p>
         </Reveal>
       </section>
@@ -340,6 +347,77 @@ export default function HomePage() {
               </Reveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Telegram alerts ──────────────────────────────── */}
+      <section className="border-t border-[--border-subtle] py-16 sm:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Reveal>
+            <div className="surface rounded-2xl overflow-hidden">
+              <div className="relative px-6 sm:px-10 py-10 sm:py-12 flex flex-col lg:flex-row items-start lg:items-center gap-8 lg:gap-12">
+                {/* Telegram glow background */}
+                <div
+                  aria-hidden="true"
+                  className="absolute -top-24 -right-20 w-72 h-72 rounded-full blur-3xl opacity-20 pointer-events-none"
+                  style={{ background: "radial-gradient(circle, #229ED9 0%, transparent 70%)" }}
+                />
+
+                <div className="relative flex-1">
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[--bg-subtle] mb-4">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[--kalshi-teal] live-dot" />
+                    <span className="text-[10px] uppercase tracking-widest text-[--text-muted] font-medium">Free alerts</span>
+                  </div>
+
+                  <div className="flex items-center gap-3 mb-3">
+                    <TelegramLogo size={32} />
+                    <h2 className="text-2xl sm:text-3xl font-semibold text-[--text-primary]">
+                      Get arbitrage alerts on Telegram
+                    </h2>
+                  </div>
+
+                  <p className="text-[--text-secondary] text-sm sm:text-base leading-relaxed max-w-xl">
+                    The scanner watches Polymarket and Kalshi prices live. When a new ≥2% spread appears, our bot pings you instantly — no app to install, no email to check. Just <code className="text-[--text-primary] font-mono">/start</code> in Telegram.
+                  </p>
+
+                  <ul className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-xs sm:text-sm text-[--text-secondary]">
+                    {[
+                      "Fires every 10 minutes",
+                      "Top 5 opps per alert",
+                      "Free, /stop any time",
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-center gap-2">
+                        <Bell className="w-3.5 h-3.5 text-[--arb-amber] shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="relative flex flex-col gap-3 w-full lg:w-auto shrink-0">
+                  <a
+                    href={TELEGRAM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-lift inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#229ED9] hover:bg-[#1a8ec5] text-white font-semibold text-sm transition-colors"
+                  >
+                    <TelegramPlaneIcon size={20} className="text-white" />
+                    Open in Telegram
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                  <Link
+                    href="/alerts"
+                    className="text-xs text-[--text-secondary] hover:text-[--text-primary] text-center transition-colors"
+                  >
+                    See the live alert feed →
+                  </Link>
+                  <p className="text-[11px] text-[--text-muted] text-center font-mono">
+                    @{TELEGRAM_BOT_USERNAME}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Reveal>
         </div>
       </section>
 

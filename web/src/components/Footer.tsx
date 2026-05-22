@@ -40,6 +40,26 @@ export default function Footer() {
               </ul>
             </div>
             <div>
+              <p className="text-xs font-medium text-[--text-muted] uppercase tracking-wider mb-3">Alerts</p>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/alerts" className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors">
+                    Telegram bot
+                  </Link>
+                </li>
+                <li>
+                  <a
+                    href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "oddsarb_bot"}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors"
+                  >
+                    Open in Telegram ↗
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
               <p className="text-xs font-medium text-[--text-muted] uppercase tracking-wider mb-3">Contact</p>
               <ul className="space-y-2">
                 <li><a href="mailto:vatsalm30@gmail.com" className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors">Get in touch</a></li>
