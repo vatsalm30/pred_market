@@ -29,9 +29,8 @@ jobs:
 
           echo "Registering schedule: $CRON → $DESTINATION (via $BASE)"
 
-          RESPONSE=$(curl -s -X POST "${BASE}/v2/schedules" \
+          RESPONSE=$(curl -s -X POST "${BASE}/v2/schedules/${DESTINATION}" \
             -H "Authorization: Bearer $QSTASH_TOKEN" \
-            -H "Upstash-Destination: $DESTINATION" \
             -H "Upstash-Cron: $CRON" \
             -H "Upstash-Retries: 3")
 
