@@ -23,11 +23,9 @@ export default function NewsAdminPage() {
   async function handleUnlock(e: React.FormEvent) {
     e.preventDefault();
     setAuthError("");
-    // Test the password against the API
-    const res = await fetch("/api/news", {
+    const res = await fetch("/api/news/auth", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-password": password },
-      body: JSON.stringify({ headline: "__auth_check__", commentary: " ", url: "https://x.com", date: today }),
+      headers: { "x-admin-password": password },
     });
     if (res.status === 401) {
       setAuthError("Wrong password.");
