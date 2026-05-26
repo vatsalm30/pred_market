@@ -277,12 +277,12 @@ function ArbSection({ opps }: { opps: ArbitrageOpportunity[] }) {
             </span>
             <div className="flex gap-2">
               {opp.poly_url && (
-                <a href={opp.poly_url} target="_blank" rel="noopener noreferrer" className="text-[#1652F0] hover:opacity-70 transition-opacity">
+                <a href={opp.poly_url} target="_blank" rel="noopener noreferrer" aria-label="View on Polymarket" className="text-[#1652F0] hover:opacity-70 transition-opacity">
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               )}
               {opp.kalshi_url && (
-                <a href={opp.kalshi_url} target="_blank" rel="noopener noreferrer" className="text-[--kalshi-teal] hover:opacity-70 transition-opacity">
+                <a href={opp.kalshi_url} target="_blank" rel="noopener noreferrer" aria-label="View on Kalshi" className="text-[--kalshi-teal] hover:opacity-70 transition-opacity">
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               )}
@@ -377,6 +377,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ slug: st
                   <span className="text-sm text-[#1652F0] dark:text-[#5b8df8] font-medium">Polymarket</span>
                   {event.poly_url && (
                     <a href={event.poly_url} target="_blank" rel="noopener noreferrer"
+                      aria-label="View on Polymarket"
                       className="text-[--text-muted] hover:text-[#1652F0] transition-colors">
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
@@ -389,6 +390,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ slug: st
                   <span className="text-sm text-[--kalshi-teal] font-medium">Kalshi</span>
                   {event.kalshi_url && (
                     <a href={event.kalshi_url} target="_blank" rel="noopener noreferrer"
+                      aria-label="View on Kalshi"
                       className="text-[--text-muted] hover:text-[--kalshi-teal] transition-colors">
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>

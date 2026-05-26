@@ -137,10 +137,12 @@ function ArbCard({
           )}
           <div className="flex items-center gap-1.5">
             <a href={opp.poly_url} target="_blank" rel="noopener noreferrer"
+              aria-label="View on Polymarket"
               className="text-[#1652F0] dark:text-[#5b8df8] hover:opacity-70 transition-opacity">
               <ExternalLink className="w-3 h-3" />
             </a>
             <a href={opp.kalshi_url} target="_blank" rel="noopener noreferrer"
+              aria-label="View on Kalshi"
               className="text-[--kalshi-teal] hover:opacity-70 transition-opacity">
               <ExternalLink className="w-3 h-3" />
             </a>
@@ -269,7 +271,9 @@ function ArbitrageContent() {
       <div className="flex flex-wrap gap-6 mb-8 text-sm text-[--text-secondary]">
         <span><strong className="text-[--text-primary] font-semibold tabular-nums">{loading ? "—" : opps.length}</strong> total opportunities</span>
         <span><strong className="text-[--arb-amber] font-semibold tabular-nums">{loading ? "—" : topProfit.toFixed(0)}%</strong> highest profit*</span>
-        <span><strong className="text-[--text-primary] font-semibold">{loading ? "—" : formatVolume(totalVol)}</strong> total Poly vol</span>
+        {(loading || totalVol > 0) && (
+          <span><strong className="text-[--text-primary] font-semibold">{loading ? "—" : formatVolume(totalVol)}</strong> total Poly vol</span>
+        )}
       </div>
 
       {/* Filters */}

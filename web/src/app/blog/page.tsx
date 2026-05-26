@@ -57,7 +57,7 @@ export default async function BlogPage() {
                       {post.tags.slice(0, 3).map((tag) => (
                         <span
                           key={tag}
-                          className="text-xs px-2 py-0.5 rounded-full bg-[--kalshi-teal]/10 text-[--kalshi-teal]"
+                          className="text-xs px-2 py-0.5 rounded-full border border-[--kalshi-teal]/30 bg-[--kalshi-teal]/10 text-[--kalshi-teal]"
                         >
                           {tag}
                         </span>

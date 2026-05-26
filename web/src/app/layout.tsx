@@ -35,7 +35,11 @@ const themeScript = `
     var stored = localStorage.getItem('theme');
     var system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     var theme = stored || system;
-    if (theme === 'dark') document.documentElement.classList.add('dark');
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   } catch(e) {
     document.documentElement.classList.add('dark');
   }
@@ -44,7 +48,7 @@ const themeScript = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full dark`} suppressHydrationWarning>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

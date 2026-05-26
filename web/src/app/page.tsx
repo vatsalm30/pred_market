@@ -298,7 +298,7 @@ export default function HomePage() {
                     >
                       <td className="px-5 py-4">
                         <span className="text-[--text-primary] font-medium">{m.event}</span>
-                        <span className="ml-2 text-[--text-muted] text-xs sm:hidden">{m.outcome}</span>
+                        <span className="sm:hidden text-[--text-muted] text-xs"> · {m.outcome}</span>
                       </td>
                       <td className="px-4 py-4 text-[--text-secondary] hidden sm:table-cell">{m.outcome}</td>
                       <td className="px-4 py-4 text-center font-mono font-medium text-[#1652F0] dark:text-[#5b8df8]">{m.poly}</td>
