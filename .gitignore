@@ -34,3 +34,5 @@ ws-proxy/node_modules/
 ws-proxy/dist/
 
 /dogfood-output/
+
+polynode.py
