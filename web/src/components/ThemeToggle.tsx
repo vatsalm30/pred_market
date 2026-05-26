@@ -25,15 +25,17 @@ export function useTheme() {
 }
 
 export default function ThemeToggle() {
-  const { theme, toggle } = useTheme();
+  const { toggle } = useTheme();
 
   return (
     <button
       onClick={toggle}
-      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      aria-label="Toggle theme"
       className="btn-icon w-8 h-8 rounded-lg flex items-center justify-center text-[--text-secondary] hover:text-[--text-primary] hover:bg-[--surface-hover]"
     >
-      {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      {/* CSS-driven: no JS state = no hydration flash */}
+      <Sun className="w-4 h-4 hidden dark:block" />
+      <Moon className="w-4 h-4 block dark:hidden" />
     </button>
   );
 }

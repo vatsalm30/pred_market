@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { ArrowRight, Bell, Clock, Users, Activity, ExternalLink } from "lucide-react";
 import { PolymarketLogo, KalshiLogo, TelegramLogo, TelegramPlaneIcon } from "@/components/PlatformLogos";
 import type { RecentAlert } from "@/lib/bot";
@@ -50,19 +49,27 @@ export default function AlertsPage() {
 
   useEffect(() => {
     load();
-    const id = setInterval(load, 30_000); // refresh every 30s
-    return () => clearInterval(id);
+
+    let id: ReturnType<typeof setInterval> | null = null;
+
+    const start = () => { id = setInterval(load, 30_000); };
+    const stop  = () => { if (id) { clearInterval(id); id = null; } };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") { load(); start(); }
+      else stop();
+    };
+
+    start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => { stop(); document.removeEventListener("visibilitychange", onVisibility); };
   }, []);
 
   return (
     <div className="overflow-x-hidden">
       {/* ── Hero ─────────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-12 sm:pb-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        >
+        <div className="animate-in">
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[--bg-subtle] mb-5">
             <span className="w-1.5 h-1.5 rounded-full bg-[--kalshi-teal] live-dot" />
             <span className="text-[10px] uppercase tracking-widest text-[--text-muted] font-medium">Live · scans every 10 min</span>
@@ -95,7 +102,7 @@ export default function AlertsPage() {
             </a>
           </div>
           <p className="text-[11px] text-[--text-muted] mt-4 font-mono">@{TELEGRAM_BOT_USERNAME}</p>
-        </motion.div>
+        </div>
       </section>
 
       {/* ── Stat strip ───────────────────────────────────── */}
@@ -151,12 +158,10 @@ export default function AlertsPage() {
           <div className="surface rounded-2xl overflow-hidden">
             <ul className="divide-y divide-[--border-subtle]">
               {stats.recent_alerts.map((a, i) => (
-                <motion.li
+                <li
                   key={`${a.ts}-${i}`}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.35, delay: Math.min(i * 0.03, 0.4) }}
-                  className="p-4 sm:p-5 hover:bg-[--surface-hover] transition-colors"
+                  className="animate-in p-4 sm:p-5 hover:bg-[--surface-hover] transition-colors"
+                  style={{ animationDelay: `${Math.min(i * 0.03, 0.4)}s` }}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
@@ -208,7 +213,7 @@ export default function AlertsPage() {
                       </a>
                     </div>
                   </div>
-                </motion.li>
+                </li>
               ))}
             </ul>
           </div>

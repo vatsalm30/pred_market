@@ -288,3 +288,18 @@ tr:hover .row-actions {
 ::-webkit-scrollbar-thumb:hover { background: var(--border-subtle); }
 
 table { border-collapse: collapse; }
+
+/* ── Page entrance animations ──────────────────────────────── */
+@keyframes entrance {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-in {
+    animation: entrance 0.65s var(--ease-out-expo) both;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-in { opacity: 1; }
+}
