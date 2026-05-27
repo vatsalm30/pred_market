@@ -11,7 +11,7 @@ function fmtDate(iso: string) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 }
 
-const EMPTY_FORM = (today: string) => ({ headline: "", commentary: "", url: "", tag: "", date: today });
+const EMPTY_FORM = (today: string) => ({ headline: "", commentary: "", url: "", tag: "", date: today, ogImage: "" });
 
 export default function NewsAdminPage() {
   const today = new Date().toISOString().slice(0, 10);
@@ -38,7 +38,7 @@ export default function NewsAdminPage() {
   }
 
   function loadForEdit(story: NewsStory) {
-    setForm({ headline: story.headline, commentary: story.commentary, url: story.url, tag: story.tag ?? "", date: story.date });
+    setForm({ headline: story.headline, commentary: story.commentary, url: story.url, tag: story.tag ?? "", date: story.date, ogImage: story.ogImage ?? "" });
     setEditingStory(story);
     setStatus(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -56,8 +56,8 @@ export default function NewsAdminPage() {
     setStatus(null);
     try {
       const payload = editingStory
-        ? { ...form, slug: editingStory.slug, createdAt: editingStory.createdAt, ogImage: editingStory.ogImage }
-        : form;
+        ? { ...form, slug: editingStory.slug, createdAt: editingStory.createdAt, ogImage: form.ogImage || undefined }
+        : { ...form, ogImage: form.ogImage || undefined };
       const method = editingStory ? "PUT" : "POST";
       const res = await fetch("/api/news", {
         method,
@@ -129,6 +129,15 @@ export default function NewsAdminPage() {
           <label className="block text-xs text-[--text-muted] mb-1.5">Source URL</label>
           <input type="url" required value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://..." className={inputCls} />
         </div>
+        <div>
+          <label className="block text-xs text-[--text-muted] mb-1.5">Image URL <span className="text-[--text-muted] font-normal">(optional — overrides auto-scraped OG image)</span></label>
+          <input type="url" value={form.ogImage} onChange={(e) => setForm({ ...form, ogImage: e.target.value })} placeholder="https://…" className={inputCls} />
+          {form.ogImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={form.ogImage} alt="" className="mt-2 h-24 w-auto rounded-md object-cover border border-[--border-subtle]" referrerPolicy="no-referrer" onError={(e) => (e.currentTarget.style.display = "none")} />
+          )}
+        </div>
+
         <div className="flex gap-4">
           <div className="flex-1">
             <label className="block text-xs text-[--text-muted] mb-1.5">Tags (comma-separated)</label>

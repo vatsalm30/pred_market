@@ -63,9 +63,20 @@ export default async function BlogPage() {
                     ))}
                   </div>
                 </div>
-                <span className="text-[--text-muted] text-sm mt-0.5 shrink-0 group-hover:text-[#00B3A1] transition-colors">
-                  →
-                </span>
+                {post.ogImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={post.ogImage}
+                    alt=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    className="w-24 h-16 sm:w-32 sm:h-20 object-cover rounded-md shrink-0 bg-[--surface]"
+                  />
+                ) : (
+                  <span className="text-[--text-muted] text-sm mt-0.5 shrink-0 group-hover:text-[#00B3A1] transition-colors">
+                    →
+                  </span>
+                )}
               </div>
             </Link>
           ))}

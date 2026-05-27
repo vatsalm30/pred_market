@@ -17,6 +17,7 @@ export interface BlogPost {
   table: BlogTableRow[];
   tags: string[];
   date: string;
+  ogImage?: string;
 }
 
 let _redis: RedisType | null = null;

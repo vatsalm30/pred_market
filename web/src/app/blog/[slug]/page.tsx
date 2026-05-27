@@ -88,6 +88,17 @@ export default async function BlogPostPage({ params }: Props) {
         </div>
       </div>
 
+      {/* Hero image */}
+      {post.ogImage && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={post.ogImage}
+          alt=""
+          referrerPolicy="no-referrer"
+          className="w-full h-56 object-cover rounded-xl mb-8 bg-[--surface]"
+        />
+      )}
+
       {/* Body */}
       <p className="text-[--text-secondary] leading-relaxed mb-8">{post.body}</p>
 

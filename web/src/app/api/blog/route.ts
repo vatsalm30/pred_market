@@ -15,7 +15,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 }
 
 function buildPost(body: Record<string, unknown>, slug: string): BlogPost | { error: string } {
-  const { title, body: postBody, tags, metaTitle, metaDescription, table, date } = body as Record<string, string>;
+  const { title, body: postBody, tags, metaTitle, metaDescription, table, date, ogImage } = body as Record<string, string>;
   if (!title?.trim() || !postBody?.trim() || !date?.trim()) {
     return { error: "Missing required fields: title, body, date" };
   }
@@ -45,6 +45,7 @@ function buildPost(body: Record<string, unknown>, slug: string): BlogPost | { er
     table: parsedTable,
     tags: parsedTags,
     date: date.trim(),
+    ogImage: ogImage?.trim() || undefined,
   };
 }
 

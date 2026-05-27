@@ -28,6 +28,7 @@ const EMPTY_FORM = (today: string) => ({
   metaTitle: "",
   metaDescription: "",
   tableRaw: "[]",
+  ogImage: "",
   date: today,
 });
 
@@ -63,6 +64,7 @@ export default function BlogAdminPage() {
       metaTitle: post.metaTitle,
       metaDescription: post.metaDescription,
       tableRaw: JSON.stringify(post.table, null, 2),
+      ogImage: post.ogImage ?? "",
       date: post.date,
     });
     setEditingPost(post);
@@ -88,6 +90,7 @@ export default function BlogAdminPage() {
         metaTitle: form.metaTitle || form.title,
         metaDescription: form.metaDescription || form.body.split(".")[0] + ".",
         table: form.tableRaw,
+        ogImage: form.ogImage || undefined,
         date: form.date,
         ...(editingPost ? { slug: editingPost.slug } : {}),
       };
@@ -168,6 +171,15 @@ export default function BlogAdminPage() {
             <label className="block text-xs text-[--text-muted] mb-1.5">Date</label>
             <input type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={inputCls} />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-xs text-[--text-muted] mb-1.5">Image URL <span className="text-[--text-muted] font-normal">(optional — paste any image URL)</span></label>
+          <input type="url" value={form.ogImage} onChange={(e) => setForm({ ...form, ogImage: e.target.value })} placeholder="https://…" className={inputCls} />
+          {form.ogImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={form.ogImage} alt="" className="mt-2 h-24 w-auto rounded-md object-cover border border-[--border-subtle]" referrerPolicy="no-referrer" onError={(e) => (e.currentTarget.style.display = "none")} />
+          )}
         </div>
 
         <div>
