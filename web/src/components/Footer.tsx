@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PolymarketLogo, KalshiLogo } from "./PlatformLogos";
+import { PolymarketLogo, KalshiLogo, XLogo } from "./PlatformLogos";
 
 export default function Footer() {
   return (
@@ -69,7 +69,18 @@ export default function Footer() {
         </div>
         <div className="mt-8 pt-6 border-t border-[--border-subtle] flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-[--text-muted] text-xs">© {new Date().getFullYear()} OmniPred. Not affiliated with Polymarket or Kalshi.</p>
-          <p className="text-[--text-muted] text-xs">Not financial advice.</p>
+          <div className="flex items-center gap-4">
+            <p className="text-[--text-muted] text-xs">Not financial advice.</p>
+            <a
+              href="https://x.com/OmniPred_"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Follow OmniPred on X"
+              className="text-[--text-muted] hover:text-[--text-primary] transition-colors"
+            >
+              <XLogo size={14} />
+            </a>
+          </div>
         </div>
       </div>
     </footer>
