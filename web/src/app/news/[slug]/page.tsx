@@ -58,11 +58,11 @@ export default async function NewsStoryPage({ params }: Props) {
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-3">
           <span className="text-[--text-muted] text-sm">{fmtDate(story.date)}</span>
-          {story.tag && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[--surface] border border-[--border-subtle] text-[--text-muted]">
-              {story.tag}
+          {story.tag && story.tag.split(",").map((t) => t.trim()).filter(Boolean).map((t) => (
+            <span key={t} className="text-xs px-2 py-0.5 rounded-full bg-[#00B3A1]/10 border border-[#00B3A1]/30 text-[#00B3A1]">
+              {t}
             </span>
-          )}
+          ))}
         </div>
         <h1 className="text-2xl font-bold text-[--text-primary] leading-snug">
           {story.headline}
@@ -92,7 +92,7 @@ export default async function NewsStoryPage({ params }: Props) {
         </p>
         <Link
           href="/arbitrage"
-          className="inline-flex items-center gap-2 bg-[--kalshi-teal] text-white text-sm font-medium px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-2 bg-[#00B3A1] text-white text-sm font-medium px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
         >
           Check live arb gaps →
         </Link>

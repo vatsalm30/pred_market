@@ -43,27 +43,38 @@ export default async function NewsPage() {
               href={`/news/${story.slug}`}
               className="block group py-5 border-b border-[--border-subtle] hover:bg-[--surface-hover] -mx-4 px-4 transition-colors"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
+              <div className="flex items-start gap-4">
+                <div className="min-w-0 flex-1">
                   <p className="font-semibold text-[--text-primary] group-hover:text-[--kalshi-teal] transition-colors leading-snug">
                     {story.headline}
                   </p>
-                  <p className="text-[--text-secondary] text-sm mt-1 line-clamp-1">
+                  <p className="text-[--text-secondary] text-sm mt-1 line-clamp-2">
                     {story.commentary}
                   </p>
                   <div className="flex items-center gap-3 mt-2">
                     <span className="text-[--text-muted] text-xs">{fmtDate(story.date)}</span>
                     <span className="text-[--text-muted] text-xs">{extractDomain(story.url)}</span>
-                    {story.tag && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-[--surface] border border-[--border-subtle] text-[--text-muted]">
-                        {story.tag}
+                    {story.tag && story.tag.split(",").map((t) => t.trim()).filter(Boolean).map((t) => (
+                      <span key={t} className="text-xs px-2 py-0.5 rounded-full bg-[#00B3A1]/10 border border-[#00B3A1]/30 text-[#00B3A1]">
+                        {t}
                       </span>
-                    )}
+                    ))}
                   </div>
                 </div>
-                <span className="text-[--text-muted] text-sm mt-0.5 shrink-0 group-hover:text-[--kalshi-teal] transition-colors">
-                  →
-                </span>
+                {story.ogImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={story.ogImage}
+                    alt=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    className="w-24 h-16 sm:w-32 sm:h-20 object-cover rounded-md shrink-0 bg-[--surface]"
+                  />
+                ) : (
+                  <span className="text-[--text-muted] text-sm mt-0.5 shrink-0 group-hover:text-[--kalshi-teal] transition-colors">
+                    →
+                  </span>
+                )}
               </div>
             </Link>
           ))}

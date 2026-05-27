@@ -141,7 +141,7 @@ export default async function BlogPostPage({ params }: Props) {
         </p>
         <Link
           href="/arbitrage"
-          className="inline-flex items-center gap-2 bg-[--kalshi-teal] text-white text-sm font-medium px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-2 bg-[#00B3A1] text-white text-sm font-medium px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
         >
           View Live Arbitrage Scanner →
         </Link>

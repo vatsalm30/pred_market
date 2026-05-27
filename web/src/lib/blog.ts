@@ -70,6 +70,16 @@ export async function getPost(slug: string): Promise<BlogPost | null> {
   }
 }
 
+export function generateSlug(title: string): string {
+  const base = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60);
+  const suffix = Date.now().toString(36).slice(-4);
+  return `${base}-${suffix}`;
+}
+
 export async function recentPostExists(withinHours = 20): Promise<boolean> {
   const [latestSlug] = (await redis().zrange(INDEX_KEY, -1, -1)) as string[];
   if (!latestSlug) return false;

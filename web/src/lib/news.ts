@@ -8,6 +8,7 @@ export interface NewsStory {
   tag?: string;
   date: string;       // YYYY-MM-DD
   createdAt: string;  // ISO timestamp
+  ogImage?: string;
 }
 
 let _redis: RedisType | null = null;

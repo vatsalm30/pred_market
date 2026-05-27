@@ -14,7 +14,7 @@ function fmtDate(iso: string): string {
   const d = new Date(iso + "T00:00:00Z");
   if (isNaN(d.getTime())) return iso;
   return d.toLocaleDateString("en-US", {
-    month: "long",
+    month: "short",
     day: "numeric",
     year: "numeric",
     timeZone: "UTC",
@@ -36,36 +36,36 @@ export default async function BlogPage() {
       {posts.length === 0 ? (
         <p className="text-[--text-muted] text-sm">No posts yet. Check back tomorrow.</p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-px">
           {posts.map((post) => (
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
-              className="block bg-[--surface] border border-[--border-subtle] rounded-xl p-5 hover:bg-[--surface-hover] transition-colors"
+              className="block group py-5 border-b border-[--border-subtle] hover:bg-[--surface-hover] -mx-4 px-4 transition-colors"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="font-semibold text-[--text-primary] leading-snug">
+              <div className="flex items-start gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-[--text-primary] group-hover:text-[#00B3A1] transition-colors leading-snug">
                     {post.title}
                   </p>
-                  <p className="text-[--text-secondary] text-sm mt-1.5 line-clamp-2">
+                  <p className="text-[--text-secondary] text-sm mt-1 line-clamp-2">
                     {post.body.split(".")[0]}.
                   </p>
-                  <div className="flex items-center gap-3 mt-3">
+                  <div className="flex items-center gap-3 mt-2 flex-wrap">
                     <span className="text-[--text-muted] text-xs">{fmtDate(post.date)}</span>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {post.tags.slice(0, 3).map((tag) => (
-                        <span
-                          key={tag}
-                          className="text-xs px-2 py-0.5 rounded-full border border-[--kalshi-teal]/30 bg-[--kalshi-teal]/10 text-[--kalshi-teal]"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
+                    {post.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-xs px-2 py-0.5 rounded-full bg-[#00B3A1]/10 border border-[#00B3A1]/30 text-[#00B3A1]"
+                      >
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 </div>
-                <span className="text-[--text-muted] text-lg mt-0.5 shrink-0">→</span>
+                <span className="text-[--text-muted] text-sm mt-0.5 shrink-0 group-hover:text-[#00B3A1] transition-colors">
+                  →
+                </span>
               </div>
             </Link>
           ))}
