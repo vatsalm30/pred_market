@@ -44,13 +44,13 @@ function Ticker() {
 function getHomeStats() {
   try {
     const base    = path.join(process.cwd(), "public", "data");
-    const events  = JSON.parse(fs.readFileSync(path.join(base, "all_events.json"), "utf8"))          as Array<{ volume?: number }>;
-    const matched = JSON.parse(fs.readFileSync(path.join(base, "matched_markets.json"), "utf8"))     as Array<{ outcomes: unknown[] }>;
+    const events  = JSON.parse(fs.readFileSync(path.join(base, "all_events.json"), "utf8"))              as Array<{ volume?: number }>;
+    const matched = JSON.parse(fs.readFileSync(path.join(base, "matched_markets.json"), "utf8"))         as Array<{ poly_event: string }>;
     const arb     = JSON.parse(fs.readFileSync(path.join(base, "arbitrage_opportunities.json"), "utf8")) as unknown[];
     return {
       totalMarkets:  events.length,
-      matchedEvents: matched.length,
-      outcomePairs:  matched.reduce((s, g) => s + g.outcomes.length, 0),
+      matchedEvents: new Set(matched.map((r) => r.poly_event)).size,
+      outcomePairs:  matched.length,
       arbOpps:       arb.length,
       totalVolume:   events.reduce((s, e) => s + (e.volume ?? 0), 0),
     };
