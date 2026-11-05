@@ -1,26 +1,9 @@
+import { DeleteCommand, GetCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import type { ArbitrageOpportunity } from "./csv";
+import { db, TABLE, isLive, nowSec, putIfAbsent, queryAll } from "./db";
 
-// Lazy-initialise the Redis client so the module is safe to import even when
-// env vars are absent (e.g. during a static build step).
-let _redis: import("@upstash/redis").Redis | null = null;
-
-function redis() {
-  if (!_redis) {
-    const { Redis } = require("@upstash/redis");
-    _redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-    }) as import("@upstash/redis").Redis;
-  }
-  return _redis!;
-}
-
-const SUB_PREFIX = "bot:subscriber:";
-const SEEN_PREFIX = "bot:seen:";
 const SEEN_TTL = 86_400; // 24 h
-const RECENT_ALERTS_KEY = "bot:recent_alerts";
-const LAST_SCAN_KEY = "bot:last_scan";
-const RECENT_ALERTS_CAP = 25;
+const RECENT_ALERTS_TTL = 7 * 86_400;
 
 export function oppKey(o: ArbitrageOpportunity): string {
   return `${o.kalshi_market_id}:${o.poly_market_id}:${o.kalshi_leg}:${o.poly_leg}`;
@@ -30,32 +13,27 @@ export async function addSubscriber(
   chatId: number,
   username?: string
 ): Promise<void> {
-  await redis().hset(`${SUB_PREFIX}${chatId}`, {
-    chatId: String(chatId),
-    username: username ?? "",
-    joinedAt: new Date().toISOString(),
-  });
+  await db().send(
+    new PutCommand({
+      TableName: TABLE,
+      Item: {
+        pk: "sub",
+        sk: String(chatId),
+        chatId: String(chatId),
+        username: username ?? "",
+        joinedAt: new Date().toISOString(),
+      },
+    })
+  );
 }
 
 export async function removeSubscriber(chatId: number): Promise<void> {
-  await redis().del(`${SUB_PREFIX}${chatId}`);
+  await db().send(new DeleteCommand({ TableName: TABLE, Key: { pk: "sub", sk: String(chatId) } }));
 }
 
 export async function getSubscriberIds(): Promise<number[]> {
-  const ids: number[] = [];
-  let cursor = 0;
-  do {
-    const [next, keys] = await redis().scan(cursor, {
-      match: `${SUB_PREFIX}*`,
-      count: 100,
-    });
-    cursor = Number(next);
-    for (const key of keys as string[]) {
-      const id = Number(key.replace(SUB_PREFIX, ""));
-      if (!isNaN(id)) ids.push(id);
-    }
-  } while (cursor !== 0);
-  return ids;
+  const items = await queryAll("sub");
+  return items.map((i) => Number(i.sk)).filter((id) => !isNaN(id));
 }
 
 /**
@@ -63,11 +41,7 @@ export async function getSubscriberIds(): Promise<number[]> {
  * seeing it (i.e. it should be sent), false if already seen.
  */
 export async function markSeen(key: string): Promise<boolean> {
-  const result = await redis().set(`${SEEN_PREFIX}${key}`, "1", {
-    nx: true,
-    ex: SEEN_TTL,
-  });
-  return result !== null;
+  return putIfAbsent({ pk: `seen#${key}`, sk: "_", ttl: nowSec() + SEEN_TTL });
 }
 
 export interface RecentAlert {
@@ -86,44 +60,55 @@ export interface RecentAlert {
 
 export async function recordAlerts(opps: ArbitrageOpportunity[]): Promise<void> {
   if (opps.length === 0) return;
-  const entries = opps.map((o) =>
-    JSON.stringify({
-      ts: new Date().toISOString(),
-      poly_event: o.poly_event,
-      poly_label: o.poly_label,
-      kalshi_label: o.kalshi_label,
-      kalshi_leg: o.kalshi_leg,
-      poly_leg: o.poly_leg,
-      kalshi_ask: o.kalshi_ask,
-      poly_ask: o.poly_ask,
-      net_profit_pct: o.net_profit_pct,
-      poly_url: o.poly_url,
-      kalshi_url: o.kalshi_url,
-    } satisfies RecentAlert)
+  const ts = new Date().toISOString();
+  const ttl = nowSec() + RECENT_ALERTS_TTL;
+  await Promise.all(
+    opps.map((o, n) => {
+      const alert: RecentAlert = {
+        ts,
+        poly_event: o.poly_event,
+        poly_label: o.poly_label,
+        kalshi_label: o.kalshi_label,
+        kalshi_leg: o.kalshi_leg,
+        poly_leg: o.poly_leg,
+        kalshi_ask: o.kalshi_ask,
+        poly_ask: o.poly_ask,
+        net_profit_pct: o.net_profit_pct,
+        poly_url: o.poly_url,
+        kalshi_url: o.kalshi_url,
+      };
+      // Old entries expire via ttl instead of an LTRIM-style cap
+      const sk = `${ts}#${String(n).padStart(4, "0")}`;
+      return db().send(new PutCommand({ TableName: TABLE, Item: { pk: "alert", sk, ttl, alert } }));
+    })
   );
-  // LPUSH newest first, then LTRIM to cap
-  await redis().lpush(RECENT_ALERTS_KEY, ...entries);
-  await redis().ltrim(RECENT_ALERTS_KEY, 0, RECENT_ALERTS_CAP - 1);
 }
 
 export async function getRecentAlerts(limit = 25): Promise<RecentAlert[]> {
-  const items = await redis().lrange(RECENT_ALERTS_KEY, 0, Math.max(0, limit - 1));
-  return (items as (string | RecentAlert)[])
-    .map((raw) => {
-      if (typeof raw === "string") {
-        try { return JSON.parse(raw) as RecentAlert; } catch { return null; }
-      }
-      return raw;
+  const res = await db().send(
+    new QueryCommand({
+      TableName: TABLE,
+      KeyConditionExpression: "pk = :pk",
+      ExpressionAttributeValues: { ":pk": "alert" },
+      ScanIndexForward: false,
+      Limit: Math.max(1, limit),
     })
-    .filter((x): x is RecentAlert => x !== null);
+  );
+  return (res.Items ?? []).filter(isLive).map((i) => i.alert as RecentAlert);
 }
 
 export async function setLastScan(): Promise<void> {
-  await redis().set(LAST_SCAN_KEY, new Date().toISOString());
+  await db().send(
+    new PutCommand({
+      TableName: TABLE,
+      Item: { pk: "meta", sk: "last_scan", value: new Date().toISOString() },
+    })
+  );
 }
 
 export async function getLastScan(): Promise<string | null> {
-  return (await redis().get<string>(LAST_SCAN_KEY)) ?? null;
+  const res = await db().send(new GetCommand({ TableName: TABLE, Key: { pk: "meta", sk: "last_scan" } }));
+  return (res.Item?.value as string | undefined) ?? null;
 }
 
 export function formatAlert(o: ArbitrageOpportunity): string {

@@ -4,6 +4,7 @@ import path from "path";
 import { ArrowRight, Zap, TrendingUp, Bell } from "lucide-react";
 import { PolymarketLogo, KalshiLogo, TelegramLogo, TelegramPlaneIcon } from "@/components/PlatformLogos";
 import { formatVolume } from "@/lib/csv";
+import { getRecentWhales, type WhaleTrade } from "@/lib/whale";
 
 export const revalidate = 3600;
 
@@ -59,8 +60,15 @@ function getHomeStats() {
   }
 }
 
-export default function HomePage() {
+function fmtWhaleUsd(v: number): string {
+  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
+  if (v >= 1000) return `$${(v / 1000).toFixed(1)}K`;
+  return `$${Math.round(v)}`;
+}
+
+export default async function HomePage() {
   const stats = getHomeStats();
+  const recentWhales = await getRecentWhales(5);
 
   return (
     <div className="overflow-x-hidden">
@@ -323,6 +331,62 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── Whale moves ─────────────────────────────────── */}
+      {recentWhales.length > 0 && (
+        <section className="border-t border-[--border-subtle] py-16 sm:py-20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="animate-in flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🐋</span>
+                <h2 className="text-xl font-semibold text-[--text-primary]">Recent Whale Moves</h2>
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[--surface] border border-[--border-subtle]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#00B3A1] live-dot" />
+                  <span className="text-[10px] uppercase tracking-widest text-[--text-muted] font-medium">Live</span>
+                </span>
+              </div>
+              <Link
+                href="/whale"
+                className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors flex items-center gap-1"
+              >
+                All whale activity <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            <div className="animate-in surface rounded-2xl overflow-hidden" style={{ animationDelay: "0.08s" }}>
+              <div className="divide-y divide-[--border-subtle]">
+                {recentWhales.map((t: WhaleTrade) => (
+                  <div key={t.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-[--surface-hover] transition-colors">
+                    <span
+                      className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        t.side === "BUY"
+                          ? "bg-emerald-500/10 text-emerald-500"
+                          : "bg-red-500/10 text-red-500"
+                      }`}
+                    >
+                      {t.side}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <a
+                        href={t.marketSlug ? `https://polymarket.com/event/${t.marketSlug}` : "https://polymarket.com"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-[--text-primary] font-medium truncate block hover:text-[#00B3A1] transition-colors"
+                      >
+                        {t.marketTitle}
+                      </a>
+                      <p className="text-xs text-[--text-muted]">{t.outcome} · {(t.price * 100).toFixed(1)}¢</p>
+                    </div>
+                    <p className="shrink-0 font-mono font-semibold text-[--text-primary] tabular-nums text-sm">
+                      {fmtWhaleUsd(t.usdValue)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── CTA ──────────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">

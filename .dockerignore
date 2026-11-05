@@ -1,0 +1,12 @@
+.git
+.env*
+*.pem
+*.csv
+bot.py
+polynode.py
+web
+ws-proxy
+dogfood-output
+__pycache__
+.agents
+.claude

@@ -1,0 +1,164 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  OmniPred backend. Replaces Upstash Redis (DynamoDB) and Upstash QStash
+  (EventBridge Scheduler + ping Lambda). The data pipeline runs on GCP
+  Cloud Run (see gcp/). Sized to stay inside the AWS free tier.
+
+Parameters:
+  SiteUrl:
+    Type: String
+    Default: https://www.omnipred.com
+  CronSecret:
+    Type: String
+    NoEcho: true
+
+Resources:
+  # ── Storage ──────────────────────────────────────────────────────────────
+  Table:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: omnipred
+      AttributeDefinitions:
+        - { AttributeName: pk, AttributeType: S }
+        - { AttributeName: sk, AttributeType: S }
+      KeySchema:
+        - { AttributeName: pk, KeyType: HASH }
+        - { AttributeName: sk, KeyType: RANGE }
+      # Provisioned capacity within the always-free 25 RCU / 25 WCU
+      BillingMode: PROVISIONED
+      ProvisionedThroughput: { ReadCapacityUnits: 20, WriteCapacityUnits: 20 }
+      TimeToLiveSpecification: { AttributeName: ttl, Enabled: true }
+
+  # ── Credentials for the Vercel app ───────────────────────────────────────
+  VercelUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: omnipred-vercel
+      Policies:
+        - PolicyName: table-access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [dynamodb:GetItem, dynamodb:PutItem, dynamodb:DeleteItem, dynamodb:UpdateItem, dynamodb:Query]
+                Resource: !GetAtt Table.Arn
+
+  # Read-only access for the GCP pipeline's sitemap step (lists blog/news slugs)
+  PipelineUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: omnipred-gcp-pipeline
+      Policies:
+        - PolicyName: table-query
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: dynamodb:Query
+                Resource: !GetAtt Table.Arn
+
+  # ── Ping Lambda: calls the Vercel cron routes with the bearer secret ─────
+  PingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - { Effect: Allow, Principal: { Service: lambda.amazonaws.com }, Action: sts:AssumeRole }
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  PingLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/omnipred-ping
+      RetentionInDays: 7
+
+  PingFunction:
+    Type: AWS::Lambda::Function
+    DependsOn: PingLogs
+    Properties:
+      FunctionName: omnipred-ping
+      Runtime: nodejs22.x
+      Architectures: [arm64]
+      MemorySize: 128
+      Timeout: 90
+      Handler: index.handler
+      Role: !GetAtt PingRole.Arn
+      Environment:
+        Variables:
+          SITE_URL: !Ref SiteUrl
+          CRON_SECRET: !Ref CronSecret
+      Code:
+        ZipFile: |
+          exports.handler = async (event) => {
+            const res = await fetch(process.env.SITE_URL + event.path, {
+              headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+            });
+            const body = await res.text();
+            console.log(event.path, res.status, body.slice(0, 500));
+            if (!res.ok) throw new Error(`${event.path} returned ${res.status}`);
+          };
+
+  # ── Schedules ────────────────────────────────────────────────────────────
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - { Effect: Allow, Principal: { Service: scheduler.amazonaws.com }, Action: sts:AssumeRole }
+      Policies:
+        - PolicyName: invoke
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt PingFunction.Arn
+
+  TelegramScanSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: omnipred-telegram-scan
+      ScheduleExpression: rate(10 minutes)
+      FlexibleTimeWindow: { Mode: "OFF" }
+      Target:
+        Arn: !GetAtt PingFunction.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: '{"path": "/api/telegram/cron"}'
+        RetryPolicy: { MaximumRetryAttempts: 0 }
+
+  WhaleTrackSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: omnipred-whale-track
+      ScheduleExpression: rate(5 minutes)
+      FlexibleTimeWindow: { Mode: "OFF" }
+      Target:
+        Arn: !GetAtt PingFunction.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: '{"path": "/api/whale/track"}'
+        RetryPolicy: { MaximumRetryAttempts: 0 }
+
+  BlogGenerateSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: omnipred-blog-generate
+      ScheduleExpression: cron(0 8 * * ? *)
+      FlexibleTimeWindow: { Mode: "OFF" }
+      Target:
+        Arn: !GetAtt PingFunction.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: '{"path": "/api/blog/generate"}'
+        RetryPolicy: { MaximumRetryAttempts: 2 }
+
+Outputs:
+  TableName:
+    Value: !Ref Table
+  VercelUserName:
+    Value: !Ref VercelUser
+  PipelineUserName:
+    Value: !Ref PipelineUser

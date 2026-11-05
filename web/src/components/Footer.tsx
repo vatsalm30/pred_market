@@ -37,6 +37,7 @@ export default function Footer() {
                 <li><Link href="/events?view=compare" className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors">Compare Markets</Link></li>
                 <li><Link href="/events" className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors">All Markets</Link></li>
                 <li><Link href="/arbitrage" className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors">Arbitrage Scanner</Link></li>
+                <li><Link href="/whale" className="text-sm text-[--text-secondary] hover:text-[--text-primary] transition-colors">Whale Tracker</Link></li>
               </ul>
             </div>
             <div>

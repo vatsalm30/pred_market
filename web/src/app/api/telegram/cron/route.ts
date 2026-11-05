@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Receiver } from "@upstash/qstash";
 import {
   getSubscriberIds,
   removeSubscriber,
@@ -105,8 +104,8 @@ async function sendTestAlert() {
 }
 
 /**
- * Manual / local trigger via Bearer token. Used for testing.
- * Production scheduling happens via QStash → POST.
+ * Bearer-token trigger. Called on schedule by the AWS scheduler Lambda,
+ * and manually for testing (?test=true).
  */
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const auth = req.headers.get("authorization");
@@ -117,42 +116,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(req.url);
   if (searchParams.get("test") === "true") {
     return NextResponse.json(await sendTestAlert());
-  }
-
-  try {
-    return NextResponse.json(await runScan());
-  } catch (e) {
-    return NextResponse.json(
-      { error: "Live scan failed", message: (e as Error).message },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * Scheduled trigger from Upstash QStash. Verifies the HMAC signature
- * QStash attaches to every delivery before running the scan.
- */
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  const signature = req.headers.get("upstash-signature");
-  if (!signature) {
-    return NextResponse.json({ error: "Missing signature" }, { status: 401 });
-  }
-
-  const body = await req.text();
-
-  const receiver = new Receiver({
-    currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY ?? "",
-    nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY ?? "",
-  });
-
-  try {
-    await receiver.verify({ signature, body, url: req.url });
-  } catch (e) {
-    return NextResponse.json(
-      { error: "Invalid signature", message: (e as Error).message },
-      { status: 401 }
-    );
   }
 
   try {

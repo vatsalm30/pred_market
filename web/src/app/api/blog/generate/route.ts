@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Receiver } from "@upstash/qstash";
 import fs from "node:fs";
 import path from "node:path";
 import { saveBlogPost, recentPostExists, type BlogPost } from "@/lib/blog";
@@ -136,35 +135,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  try {
-    const result = await generatePost();
-    return NextResponse.json(result);
-  } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
-  }
-}
-
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  const signature = req.headers.get("upstash-signature");
-  if (!signature) {
-    return NextResponse.json({ error: "Missing signature" }, { status: 401 });
-  }
-
-  const body = await req.text();
-  const receiver = new Receiver({
-    currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY ?? "",
-    nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY ?? "",
-  });
-
-  try {
-    await receiver.verify({ signature, body, url: req.url });
-  } catch (e) {
-    return NextResponse.json(
-      { error: "Invalid signature", message: (e as Error).message },
-      { status: 401 }
-    );
-  }
-
   try {
     const result = await generatePost();
     return NextResponse.json(result);

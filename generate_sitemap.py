@@ -1,5 +1,5 @@
-"""Generate web/public/sitemap.xml from all_events.json + Upstash Redis (blog/news slugs)."""
-import json, urllib.parse, urllib.request, datetime, os, sys
+"""Generate web/public/sitemap.xml from all_events.json + DynamoDB (blog/news slugs)."""
+import json, urllib.parse, datetime, os, sys
 
 BASE = os.environ.get("SITE_URL", "https://omnipred.com")
 TODAY = datetime.date.today().isoformat()
@@ -16,20 +16,27 @@ STATIC = [
 ]
 
 
-def redis_zrange(key: str) -> list[str]:
-    """Fetch all members of a Redis sorted set via the Upstash REST API."""
-    url   = os.environ.get("UPSTASH_REDIS_REST_URL", "").rstrip("/")
-    token = os.environ.get("UPSTASH_REDIS_REST_TOKEN", "")
-    if not url or not token:
+def post_slugs(kind: str) -> list[str]:
+    """Slugs in a blog/news partition of the DynamoDB table, newest first."""
+    table_name = os.environ.get("DYNAMODB_TABLE")
+    if not table_name:
         return []
-    endpoint = f"{url}/zrange/{urllib.parse.quote(key, safe='')}/0/-1"
-    req = urllib.request.Request(endpoint, headers={"Authorization": f"Bearer {token}"})
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read())
-            return data.get("result") or []
+        import boto3
+        from boto3.dynamodb.conditions import Key
+
+        table = boto3.resource("dynamodb").Table(table_name)
+        items, kwargs = [], {"KeyConditionExpression": Key("pk").eq(kind)}
+        while True:
+            resp = table.query(**kwargs)
+            items += resp["Items"]
+            if "LastEvaluatedKey" not in resp:
+                break
+            kwargs["ExclusiveStartKey"] = resp["LastEvaluatedKey"]
+        items.sort(key=lambda i: i.get("score", 0), reverse=True)
+        return [i["sk"] for i in items]
     except Exception as exc:
-        print(f"  warn: redis_zrange({key!r}) failed — {exc}", file=sys.stderr)
+        print(f"  warn: post_slugs({kind!r}) failed — {exc}", file=sys.stderr)
         return []
 
 
@@ -42,8 +49,8 @@ with open(events_path) as f:
     events = json.load(f)
 
 event_ids   = list({e["id"] for e in events if e.get("id")})
-blog_slugs  = redis_zrange("blog:index")
-news_slugs  = redis_zrange("news:index")
+blog_slugs  = post_slugs("blog")
+news_slugs  = post_slugs("news")
 
 lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',

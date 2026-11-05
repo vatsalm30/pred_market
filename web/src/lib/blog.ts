@@ -1,4 +1,5 @@
-import type { Redis as RedisType } from "@upstash/redis";
+import { GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { db, TABLE, queryAll } from "./db";
 
 export interface BlogTableRow {
   market: string;
@@ -20,55 +21,23 @@ export interface BlogPost {
   ogImage?: string;
 }
 
-let _redis: RedisType | null = null;
-function redis(): RedisType {
-  if (!_redis) {
-    const { Redis } = require("@upstash/redis");
-    _redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-    }) as RedisType;
-  }
-  return _redis!;
-}
-
-const POST_PREFIX = "blog:post:";
-const INDEX_KEY = "blog:index";
+const PK = "blog";
 
 export async function saveBlogPost(post: BlogPost): Promise<void> {
   const score = new Date(post.date).getTime() || Date.now();
-  await redis().set(`${POST_PREFIX}${post.slug}`, JSON.stringify(post));
-  await redis().zadd(INDEX_KEY, { score, member: post.slug });
+  await db().send(new PutCommand({ TableName: TABLE, Item: { pk: PK, sk: post.slug, score, data: post } }));
 }
 
 export async function getAllPosts(): Promise<BlogPost[]> {
-  const slugs = (await redis().zrange(INDEX_KEY, 0, -1, { rev: true })) as string[];
-  if (slugs.length === 0) return [];
-
-  const pipeline = redis().pipeline();
-  for (const slug of slugs) pipeline.get(`${POST_PREFIX}${slug}`);
-  const results = await pipeline.exec();
-
-  return (results as unknown[])
-    .map((raw) => {
-      if (!raw) return null;
-      try {
-        return (typeof raw === "string" ? JSON.parse(raw) : raw) as BlogPost;
-      } catch {
-        return null;
-      }
-    })
-    .filter((p): p is BlogPost => p !== null);
+  const items = await queryAll(PK);
+  return items
+    .sort((x, y) => Number(y.score) - Number(x.score))
+    .map((i) => i.data as BlogPost);
 }
 
 export async function getPost(slug: string): Promise<BlogPost | null> {
-  const raw = await redis().get<string>(`${POST_PREFIX}${slug}`);
-  if (!raw) return null;
-  try {
-    return (typeof raw === "string" ? JSON.parse(raw) : raw) as BlogPost;
-  } catch {
-    return null;
-  }
+  const res = await db().send(new GetCommand({ TableName: TABLE, Key: { pk: PK, sk: slug } }));
+  return (res.Item?.data as BlogPost | undefined) ?? null;
 }
 
 export function generateSlug(title: string): string {
@@ -82,9 +51,8 @@ export function generateSlug(title: string): string {
 }
 
 export async function recentPostExists(withinHours = 20): Promise<boolean> {
-  const [latestSlug] = (await redis().zrange(INDEX_KEY, -1, -1)) as string[];
-  if (!latestSlug) return false;
-  const score = await redis().zscore(INDEX_KEY, latestSlug);
-  if (score === null) return false;
-  return Date.now() - Number(score) < withinHours * 3600 * 1000;
+  const items = await queryAll(PK);
+  if (items.length === 0) return false;
+  const latest = Math.max(...items.map((i) => Number(i.score)));
+  return Date.now() - latest < withinHours * 3600 * 1000;
 }

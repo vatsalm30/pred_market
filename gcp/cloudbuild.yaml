@@ -1,0 +1,6 @@
+# Builds the pipeline image from the repo root (Dockerfile lives in gcp/pipeline/).
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-f", "gcp/pipeline/Dockerfile", "-t", "${_IMAGE}", "."]
+images: ["${_IMAGE}"]
+timeout: 1800s

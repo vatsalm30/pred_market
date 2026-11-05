@@ -1,0 +1,15 @@
+# Upload only what the pipeline image needs (see gcp/pipeline/Dockerfile)
+.git
+.env*
+*.pem
+*.csv
+*.json
+bot.py
+polynode.py
+web/
+ws-proxy/
+aws/
+dogfood-output/
+__pycache__/
+.agents/
+.claude/
