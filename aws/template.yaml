@@ -155,6 +155,18 @@ Resources:
         Input: '{"path": "/api/blog/generate"}'
         RetryPolicy: { MaximumRetryAttempts: 2 }
 
+  NewsGenerateSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: omnipred-news-generate
+      ScheduleExpression: cron(0 13,21 * * ? *)
+      FlexibleTimeWindow: { Mode: "OFF" }
+      Target:
+        Arn: !GetAtt PingFunction.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: '{"path": "/api/news/generate"}'
+        RetryPolicy: { MaximumRetryAttempts: 0 }
+
 Outputs:
   TableName:
     Value: !Ref Table
