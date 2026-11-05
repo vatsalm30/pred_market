@@ -1,4 +1,3 @@
-import pmxt
 import config
 import pandas as pd
 import re
@@ -8,8 +7,8 @@ import requests
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-
-kalshi_ex = pmxt.Exchange("KALSHI")
+from datetime import datetime
+from types import SimpleNamespace
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
@@ -51,6 +50,73 @@ def fetch_poly_events_gamma() -> list:
         i += 1
         time.sleep(0.1)
     return flat_markets
+
+
+# ── KALSHI: fetch open events with nested markets ────────────────────────────
+# Same /events pagination and field mapping as pmxt's Kalshi normalizer, but
+# paced and authenticated: pmxt fetches every page back-to-back unauthenticated,
+# which Kalshi rate-limits (429) on the full ~250k-market scan.
+
+def _kalshi_label(raw):
+    for key in ("yes_sub_title", "subtitle"):
+        v = (raw.get(key) or "").strip()
+        if v and not v.startswith("::"):
+            return v
+    return None
+
+
+def _kalshi_last_price(raw) -> float:
+    if raw.get("last_price_dollars") is not None:
+        return float(raw["last_price_dollars"])
+    ask, bid = raw.get("yes_ask_dollars"), raw.get("yes_bid_dollars")
+    if ask is not None and bid is not None:
+        return (float(ask) + float(bid)) / 2
+    if ask is not None:
+        return float(ask)
+    return 0.0
+
+
+def fetch_kalshi_markets() -> list:
+    headers = {"Authorization": f"Bearer {config.KALSHI_API_KEY}"} if config.KALSHI_API_KEY else {}
+    markets, cursor = [], None
+    while True:
+        params = {"limit": 200, "with_nested_markets": "true", "status": "open"}
+        if cursor:
+            params["cursor"] = cursor
+        for attempt in range(6):
+            r = requests.get(f"{config.KALSHI_BASE_URL}/events", headers=headers, params=params, timeout=60)
+            if r.status_code != 429:
+                break
+            time.sleep(min(60, 5 * 2 ** attempt))
+        r.raise_for_status()
+        data = r.json()
+        events = data.get("events") or []
+        for event in events:
+            for raw in event.get("markets") or []:
+                price = _kalshi_last_price(raw)
+                label = _kalshi_label(raw)
+                yes = SimpleNamespace(label=label or "Yes", price=price)
+                no = SimpleNamespace(label=f"Not {label}" if label else "No", price=1 - price)
+                try:
+                    resolution = datetime.fromisoformat(raw["expiration_time"].replace("Z", "+00:00"))
+                except (KeyError, ValueError, AttributeError):
+                    resolution = None
+                markets.append(SimpleNamespace(
+                    market_id=raw["ticker"],
+                    title=event.get("title", ""),
+                    outcomes=[yes, no],
+                    yes=yes,
+                    no=no,
+                    resolution_date=resolution,
+                    volume=float(raw.get("volume_fp") or raw.get("volume") or 0),
+                    volume_24h=float(raw.get("volume_24h_fp") or raw.get("volume_24h") or raw.get("volume") or 0),
+                    url=f"https://kalshi.com/events/{event.get('event_ticker', '')}",
+                ))
+        cursor = data.get("cursor")
+        if not events or not cursor:
+            break
+        time.sleep(config.KALSHI_PAGE_DELAY)
+    return markets
 
 
 # ── STEP 1: PARSE MARKETS ─────────────────────────────────────────────────────
@@ -107,7 +173,7 @@ def parse_kalshi_market(m) -> dict:
 # ── STEP 2: FETCH ─────────────────────────────────────────────────────────────
 
 print("Fetching markets...")
-kalshi_markets_raw = kalshi_ex.fetch_markets()
+kalshi_markets_raw = fetch_kalshi_markets()
 print(f"  Kalshi:     {len(kalshi_markets_raw)} markets")
 poly_markets_raw   = fetch_poly_events_gamma()
 print(f"  Polymarket: {len(poly_markets_raw)} markets")
