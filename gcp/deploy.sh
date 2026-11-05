@@ -65,15 +65,17 @@ for pair in github-token:GITHUB_TOKEN kalshi-api-key:KALSHI_API_KEY \
 done
 
 # ── Jobs + schedules ──────────────────────────────────────────────────────
-for spec in "prices|30 * * * *" "full|0 2,14 * * *"; do
-  mode=${spec%%|*}; cron=${spec#*|}
+# mode|cron|cpu|memory. Price refreshes are just HTTP + pandas, so they run
+# small to keep the hourly runs well inside the free vCPU/GiB-seconds.
+for spec in "prices|30 * * * *|1|1Gi" "full|0 2,14 * * *|2|4Gi"; do
+  IFS='|' read -r mode cron cpu memory <<< "$spec"
   job="omnipred-pipeline-$mode"
 
   gcloud run jobs deploy "$job" \
     --region "$REGION" \
     --image "$IMAGE" \
     --args "$mode" \
-    --cpu 2 --memory 4Gi \
+    --cpu "$cpu" --memory "$memory" \
     --task-timeout 3600 --max-retries 0 \
     --service-account "$JOB_SA" \
     --set-env-vars "STATE_BUCKET=$BUCKET,GITHUB_REPO=vatsalm30/pred_market,DYNAMODB_TABLE=omnipred,AWS_DEFAULT_REGION=us-east-1,SITE_URL=${SITE_URL:-https://www.omnipred.com}" \
