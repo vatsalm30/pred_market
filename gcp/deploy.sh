@@ -7,7 +7,8 @@
 #   KALSHI_API_KEY
 #   AWS_ACCESS_KEY_ID      keys for the omnipred-gcp-pipeline IAM user (aws/)
 #   AWS_SECRET_ACCESS_KEY
-# Optional env: GCP_REGION (default us-central1), SITE_URL
+# Optional env: GCP_REGION (default us-central1), SITE_URL,
+#   SKIP_BUILD=1 (reuse the last image), BUILD_ONLY=1 (stop after the build)
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -32,7 +33,10 @@ if ! gcloud artifacts repositories describe omnipred --location "$REGION" >/dev/
   gcloud artifacts repositories set-cleanup-policies omnipred --location "$REGION" --policy "$policy" --no-dry-run
   rm "$policy"
 fi
-gcloud builds submit --config gcp/cloudbuild.yaml --substitutions "_IMAGE=$IMAGE" .
+if [ -z "${SKIP_BUILD:-}" ]; then
+  gcloud builds submit --config gcp/cloudbuild.yaml --substitutions "_IMAGE=$IMAGE" .
+fi
+[ -n "${BUILD_ONLY:-}" ] && exit 0
 
 # ── State bucket + secrets ────────────────────────────────────────────────
 gcloud storage buckets describe "gs://$BUCKET" >/dev/null 2>&1 ||
