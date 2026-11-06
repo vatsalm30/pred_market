@@ -4,6 +4,7 @@ import type { Provider, ProviderProfile } from "./users";
 
 // Minimal OAuth 2.0 / OIDC for "Sign in with Google" and "Sign in with GitHub".
 // Each flow uses a random state and a PKCE verifier kept in a short-lived cookie.
+// Credentials are trimmed: a pasted leading space once sent GitHub an unknown client_id.
 
 export const OAUTH_COOKIE = "op_oauth";
 
@@ -20,15 +21,15 @@ const CONFIG: Record<Provider, ProviderConfig> = {
     authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
     scope: "openid email profile",
-    clientId: () => process.env.GOOGLE_CLIENT_ID,
-    clientSecret: () => process.env.GOOGLE_CLIENT_SECRET,
+    clientId: () => process.env.GOOGLE_CLIENT_ID?.trim(),
+    clientSecret: () => process.env.GOOGLE_CLIENT_SECRET?.trim(),
   },
   github: {
     authorizeUrl: "https://github.com/login/oauth/authorize",
     tokenUrl: "https://github.com/login/oauth/access_token",
     scope: "read:user user:email",
-    clientId: () => process.env.GITHUB_CLIENT_ID,
-    clientSecret: () => process.env.GITHUB_CLIENT_SECRET,
+    clientId: () => process.env.GITHUB_CLIENT_ID?.trim(),
+    clientSecret: () => process.env.GITHUB_CLIENT_SECRET?.trim(),
   },
 };
 
