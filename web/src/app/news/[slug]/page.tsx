@@ -49,7 +49,7 @@ export default async function NewsStoryPage({ params }: Props) {
       {/* Back */}
       <Link
         href="/news"
-        className="inline-flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-[--text-secondary] mb-8 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-(--text-muted) hover:text-(--text-secondary) mb-8 transition-colors"
       >
         ← News
       </Link>
@@ -57,37 +57,37 @@ export default async function NewsStoryPage({ params }: Props) {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-3">
-          <span className="text-[--text-muted] text-sm">{fmtDate(story.date)}</span>
+          <span className="text-(--text-muted) text-sm">{fmtDate(story.date)}</span>
           {story.tag && story.tag.split(",").map((t) => t.trim()).filter(Boolean).map((t) => (
             <span key={t} className="text-xs px-2 py-0.5 rounded-full bg-[#00B3A1]/10 border border-[#00B3A1]/30 text-[#00B3A1]">
               {t}
             </span>
           ))}
         </div>
-        <h1 className="text-2xl font-bold text-[--text-primary] leading-snug">
+        <h1 className="text-2xl font-bold text-(--text-primary) leading-snug">
           {story.headline}
         </h1>
       </div>
 
       {/* Commentary */}
-      <p className="text-[--text-secondary] leading-relaxed mb-8">{story.commentary}</p>
+      <p className="text-(--text-secondary) leading-relaxed mb-8">{story.commentary}</p>
 
       {/* Source link */}
       <a
         href={story.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 bg-[--surface] border border-[--border-subtle] text-[--text-primary] text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-[--surface-hover] transition-colors mb-10"
+        className="inline-flex items-center gap-2 bg-(--surface) border border-(--border-subtle) text-(--text-primary) text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-(--surface-hover) transition-colors mb-10"
       >
         Read on {domain}
-        <svg className="w-3.5 h-3.5 text-[--text-muted]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="w-3.5 h-3.5 text-(--text-muted)" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
         </svg>
       </a>
 
       {/* CTA */}
-      <div className="border-t border-[--border-subtle] pt-8">
-        <p className="text-[--text-secondary] text-sm mb-4">
+      <div className="border-t border-(--border-subtle) pt-8">
+        <p className="text-(--text-secondary) text-sm mb-4">
           See how this affects pricing gaps across Polymarket and Kalshi in real time.
         </p>
         <Link

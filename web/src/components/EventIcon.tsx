@@ -15,7 +15,7 @@ export default function EventIcon({ src, alt, size = 40, className = "" }: Event
   if (!src || failed) {
     return (
       <div
-        className={`shrink-0 rounded-xl bg-[--surface] border border-[--border-subtle] flex items-center justify-center text-[--text-muted] ${className}`}
+        className={`shrink-0 rounded-xl bg-(--surface) border border-(--border-subtle) flex items-center justify-center text-(--text-muted) ${className}`}
         style={{ width: size, height: size }}
         aria-hidden
       >

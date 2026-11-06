@@ -82,12 +82,12 @@ export default function NewsAdminPage() {
     }
   }
 
-  const inputCls = "w-full px-3 py-2 bg-[--surface] border border-[--border-subtle] rounded-lg text-[--text-primary] text-sm focus:outline-none focus:border-[#00B3A1]";
+  const inputCls = "w-full px-3 py-2 bg-(--surface) border border-(--border-subtle) rounded-lg text-(--text-primary) text-sm focus:outline-none focus:border-[#00B3A1]";
 
   if (!unlocked) {
     return (
       <div className="max-w-sm mx-auto px-4 py-20">
-        <h1 className="text-xl font-bold text-[--text-primary] mb-6">News Admin</h1>
+        <h1 className="text-xl font-bold text-(--text-primary) mb-6">News Admin</h1>
         <form onSubmit={handleUnlock} className="space-y-4">
           <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} autoFocus />
           {authError && <p className="text-red-500 text-sm">{authError}</p>}
@@ -102,49 +102,49 @@ export default function NewsAdminPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-xl font-bold text-[--text-primary]">
+        <h1 className="text-xl font-bold text-(--text-primary)">
           {editingStory ? "Edit story" : "Add news story"}
         </h1>
-        <a href="/news" className="text-sm text-[--text-muted] hover:text-[--text-secondary]">← /news</a>
+        <a href="/news" className="text-sm text-(--text-muted) hover:text-(--text-secondary)">← /news</a>
       </div>
 
       {/* Form */}
       {editingStory && (
         <div className="flex items-center justify-between mb-5 px-3 py-2 bg-[#00B3A1]/10 border border-[#00B3A1]/30 rounded-lg">
           <p className="text-sm text-[#00B3A1] truncate">Editing: {editingStory.headline}</p>
-          <button onClick={clearForm} className="text-xs text-[--text-muted] hover:text-[--text-primary] shrink-0 ml-4">✕ New story</button>
+          <button onClick={clearForm} className="text-xs text-(--text-muted) hover:text-(--text-primary) shrink-0 ml-4">✕ New story</button>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-xs text-[--text-muted] mb-1.5">Headline</label>
+          <label className="block text-xs text-(--text-muted) mb-1.5">Headline</label>
           <input type="text" required value={form.headline} onChange={(e) => setForm({ ...form, headline: e.target.value })} placeholder="e.g. SEC proposes new rules for prediction market platforms" className={inputCls} />
         </div>
         <div>
-          <label className="block text-xs text-[--text-muted] mb-1.5">Commentary</label>
+          <label className="block text-xs text-(--text-muted) mb-1.5">Commentary</label>
           <textarea required rows={2} value={form.commentary} onChange={(e) => setForm({ ...form, commentary: e.target.value })} placeholder="One sentence framing this through the lens of arb/liquidity on Kalshi and Polymarket." className={`${inputCls} resize-none`} />
         </div>
         <div>
-          <label className="block text-xs text-[--text-muted] mb-1.5">Source URL</label>
+          <label className="block text-xs text-(--text-muted) mb-1.5">Source URL</label>
           <input type="url" required value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://..." className={inputCls} />
         </div>
         <div>
-          <label className="block text-xs text-[--text-muted] mb-1.5">Image URL <span className="text-[--text-muted] font-normal">(optional — overrides auto-scraped OG image)</span></label>
+          <label className="block text-xs text-(--text-muted) mb-1.5">Image URL <span className="text-(--text-muted) font-normal">(optional — overrides auto-scraped OG image)</span></label>
           <input type="url" value={form.ogImage} onChange={(e) => setForm({ ...form, ogImage: e.target.value })} placeholder="https://…" className={inputCls} />
           {form.ogImage && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={form.ogImage} alt="" className="mt-2 h-24 w-auto rounded-md object-cover border border-[--border-subtle]" referrerPolicy="no-referrer" onError={(e) => (e.currentTarget.style.display = "none")} />
+            <img src={form.ogImage} alt="" className="mt-2 h-24 w-auto rounded-md object-cover border border-(--border-subtle)" referrerPolicy="no-referrer" onError={(e) => (e.currentTarget.style.display = "none")} />
           )}
         </div>
 
         <div className="flex gap-4">
           <div className="flex-1">
-            <label className="block text-xs text-[--text-muted] mb-1.5">Tags (comma-separated)</label>
+            <label className="block text-xs text-(--text-muted) mb-1.5">Tags (comma-separated)</label>
             <input type="text" value={form.tag} onChange={(e) => setForm({ ...form, tag: e.target.value })} placeholder="Regulation, Polymarket, CFTC…" className={inputCls} />
           </div>
           <div className="w-40">
-            <label className="block text-xs text-[--text-muted] mb-1.5">Date</label>
+            <label className="block text-xs text-(--text-muted) mb-1.5">Date</label>
             <input type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={inputCls} />
           </div>
         </div>
@@ -161,18 +161,18 @@ export default function NewsAdminPage() {
       {/* Existing stories */}
       {stories.length > 0 && (
         <div className="mt-12">
-          <p className="text-xs font-medium text-[--text-muted] uppercase tracking-wider mb-4">Existing stories</p>
+          <p className="text-xs font-medium text-(--text-muted) uppercase tracking-wider mb-4">Existing stories</p>
           <div className="space-y-px">
             {stories.map((s) => (
               <button
                 key={s.slug}
                 onClick={() => loadForEdit(s)}
-                className={`w-full text-left py-3 px-3 rounded-lg border transition-colors ${editingStory?.slug === s.slug ? "border-[#00B3A1]/50 bg-[#00B3A1]/10" : "border-transparent hover:bg-[--surface-hover]"}`}
+                className={`w-full text-left py-3 px-3 rounded-lg border transition-colors ${editingStory?.slug === s.slug ? "border-[#00B3A1]/50 bg-[#00B3A1]/10" : "border-transparent hover:bg-(--surface-hover)"}`}
               >
-                <p className="text-sm font-medium text-[--text-primary] truncate">{s.headline}</p>
+                <p className="text-sm font-medium text-(--text-primary) truncate">{s.headline}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs text-[--text-muted]">{fmtDate(s.date)}</span>
-                  {s.tag && <span className="text-xs text-[--text-muted] truncate">{s.tag}</span>}
+                  <span className="text-xs text-(--text-muted)">{fmtDate(s.date)}</span>
+                  {s.tag && <span className="text-xs text-(--text-muted) truncate">{s.tag}</span>}
                 </div>
               </button>
             ))}

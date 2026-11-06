@@ -10,6 +10,7 @@ import { DynamoDBDocumentClient, PutCommand, QueryCommand } from "@aws-sdk/lib-d
 //   whale / <ts>#<id>             whale trades (ttl)
 //   whaleseen#<id> / _            whale dedupe marker (ttl)
 //   whalemkt#<conditionId> / _    market title cache (ttl)
+//   apikey / <sha256>, apisub / <subId>, apireveal / <sessionId>   data stream API keys (apikeys.ts)
 //
 // Credentials use OMNIPRED_-prefixed names because Vercel reserves AWS_*.
 

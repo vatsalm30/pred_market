@@ -29,7 +29,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Sports:    "text-emerald-600 dark:text-emerald-400 bg-emerald-500/8 border-emerald-500/20",
   Economics: "text-amber-600  dark:text-amber-400  bg-amber-500/8  border-amber-500/20",
   Tech:      "text-violet-600 dark:text-violet-400 bg-violet-500/8 border-violet-500/20",
-  Other:     "text-[--text-muted] bg-[--bg-subtle] border-[--border]",
+  Other:     "text-(--text-muted) bg-(--bg-subtle) border-(--border)",
 };
 
 function ProfitBadge({ pct }: { pct: number }) {
@@ -66,7 +66,7 @@ function ArbCard({
   return (
     <div className="market-card surface rounded-2xl overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="px-4 py-4 border-b border-[--border-subtle]">
+      <div className="px-4 py-4 border-b border-(--border-subtle)">
         <div className="flex items-start gap-3">
           <EventIcon src={opp.event_icon} alt={opp.poly_event} size={40} className="shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
@@ -76,22 +76,22 @@ function ArbCard({
               </span>
               <ProfitBadge pct={opp.net_profit_pct} />
             </div>
-            <h3 className="text-[--text-primary] text-sm font-semibold leading-snug line-clamp-2">
+            <h3 className="text-(--text-primary) text-sm font-semibold leading-snug line-clamp-2">
               {opp.poly_event}
             </h3>
-            <p className="text-[--text-muted] text-xs mt-0.5 truncate">{opp.poly_label}</p>
+            <p className="text-(--text-muted) text-xs mt-0.5 truncate">{opp.poly_label}</p>
           </div>
         </div>
       </div>
 
       {/* Price boxes */}
       <div className="px-4 py-3 grid grid-cols-2 gap-2 flex-1">
-        <div className="bg-[--bg-subtle] rounded-xl p-3">
+        <div className="bg-(--bg-subtle) rounded-xl p-3">
           <div className="flex items-center gap-1.5 mb-1.5">
             <KalshiLogo size={12} />
-            <span className="text-[--text-muted] text-xs">Kalshi {opp.kalshi_leg}</span>
+            <span className="text-(--text-muted) text-xs">Kalshi {opp.kalshi_leg}</span>
           </div>
-          <div className="text-[--kalshi-teal] font-mono font-bold text-lg leading-none">
+          <div className="text-(--kalshi-teal) font-mono font-bold text-lg leading-none">
             {(displayKalshi * 100).toFixed(1)}¢
           </div>
           {liveKalshiAsk !== undefined && (
@@ -101,10 +101,10 @@ function ArbCard({
             </div>
           )}
         </div>
-        <div className="bg-[--bg-subtle] rounded-xl p-3">
+        <div className="bg-(--bg-subtle) rounded-xl p-3">
           <div className="flex items-center gap-1.5 mb-1.5">
             <PolymarketLogo size={12} />
-            <span className="text-[--text-muted] text-xs">Poly {opp.poly_leg}</span>
+            <span className="text-(--text-muted) text-xs">Poly {opp.poly_leg}</span>
           </div>
           <div className="text-[#1652F0] dark:text-[#5b8df8] font-mono font-bold text-lg leading-none">
             {(displayPoly * 100).toFixed(1)}¢
@@ -119,9 +119,9 @@ function ArbCard({
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-2.5 flex items-center justify-between border-t border-[--border-subtle] bg-[--bg-subtle]">
-        <div className="flex items-center gap-3 text-[10px] text-[--text-muted]">
-          <span className="text-[--arb-amber] font-mono font-medium">
+      <div className="px-4 py-2.5 flex items-center justify-between border-t border-(--border-subtle) bg-(--bg-subtle)">
+        <div className="flex items-center gap-3 text-[10px] text-(--text-muted)">
+          <span className="text-(--arb-amber) font-mono font-medium">
             +{(opp.gross_spread * 100).toFixed(2)}¢
           </span>
           {opp.poly_end_date && (
@@ -143,14 +143,14 @@ function ArbCard({
             </a>
             <a href={opp.kalshi_url} target="_blank" rel="noopener noreferrer"
               aria-label="View on Kalshi"
-              className="text-[--kalshi-teal] hover:opacity-70 transition-opacity">
+              className="text-(--kalshi-teal) hover:opacity-70 transition-opacity">
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
         </div>
         <Link
           href={`/arb/${slug}`}
-          className="link-arrow text-[10px] text-[--text-secondary] hover:text-[--arb-amber] flex items-center gap-0.5 transition-colors shrink-0"
+          className="link-arrow text-[10px] text-(--text-secondary) hover:text-(--arb-amber) flex items-center gap-0.5 transition-colors shrink-0"
         >
           Details <ArrowRight className="w-2.5 h-2.5" />
         </Link>
@@ -227,19 +227,19 @@ function ArbitrageContent() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-2 text-xs text-[--text-muted] mb-5">
-          <Link href="/" className="hover:text-[--text-primary] transition-colors">Home</Link>
+        <div className="flex items-center gap-2 text-xs text-(--text-muted) mb-5">
+          <Link href="/" className="hover:text-(--text-primary) transition-colors">Home</Link>
           <span>/</span>
           <span>Arbitrage Scanner</span>
         </div>
 
         <div className="flex items-start gap-4 mb-4">
-          <div className="w-11 h-11 rounded-2xl bg-[--arb-amber]/10 border border-[--arb-amber]/20 flex items-center justify-center mt-0.5 shrink-0">
-            <Zap className="w-5 h-5 text-[--arb-amber]" />
+          <div className="w-11 h-11 rounded-2xl bg-(--arb-amber)/10 border border-(--arb-amber)/20 flex items-center justify-center mt-0.5 shrink-0">
+            <Zap className="w-5 h-5 text-(--arb-amber)" />
           </div>
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-[--text-primary] leading-tight">Arbitrage Scanner</h1>
-            <p className="text-[--text-secondary] text-sm mt-1">
+            <h1 className="text-3xl sm:text-4xl font-bold text-(--text-primary) leading-tight">Arbitrage Scanner</h1>
+            <p className="text-(--text-secondary) text-sm mt-1">
               Pricing gaps between{" "}
               <span className="inline-flex items-center gap-1"><PolymarketLogo size={14} /> Polymarket</span>
               {" "}and{" "}
@@ -249,9 +249,9 @@ function ArbitrageContent() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-start gap-2.5 bg-[--arb-amber]/5 border border-[--arb-amber]/15 rounded-xl px-4 py-3 max-w-2xl">
-            <Info className="w-4 h-4 text-[--arb-amber] shrink-0 mt-0.5" />
-            <p className="text-[--text-secondary] text-xs leading-relaxed">
+          <div className="flex items-start gap-2.5 bg-(--arb-amber)/5 border border-(--arb-amber)/15 rounded-xl px-4 py-3 max-w-2xl">
+            <Info className="w-4 h-4 text-(--arb-amber) shrink-0 mt-0.5" />
+            <p className="text-(--text-secondary) text-xs leading-relaxed">
               Prices change fast and gaps close. Verify on both platforms before acting. Not financial advice.
             </p>
           </div>
@@ -260,43 +260,43 @@ function ArbitrageContent() {
               <Radio className="w-3.5 h-3.5" /> Kalshi live
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 text-xs text-[--text-muted]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[--text-muted]" /> Snapshot
+            <span className="flex items-center gap-1.5 text-xs text-(--text-muted)">
+              <span className="w-1.5 h-1.5 rounded-full bg-(--text-muted)" /> Snapshot
             </span>
           )}
         </div>
       </div>
 
       {/* Stats */}
-      <div className="flex flex-wrap gap-6 mb-8 text-sm text-[--text-secondary]">
-        <span><strong className="text-[--text-primary] font-semibold tabular-nums">{loading ? "—" : opps.length}</strong> total opportunities</span>
-        <span><strong className="text-[--arb-amber] font-semibold tabular-nums">{loading ? "—" : topProfit.toFixed(0)}%</strong> highest profit*</span>
+      <div className="flex flex-wrap gap-6 mb-8 text-sm text-(--text-secondary)">
+        <span><strong className="text-(--text-primary) font-semibold tabular-nums">{loading ? "—" : opps.length}</strong> total opportunities</span>
+        <span><strong className="text-(--arb-amber) font-semibold tabular-nums">{loading ? "—" : topProfit.toFixed(0)}%</strong> highest profit*</span>
         {(loading || totalVol > 0) && (
-          <span><strong className="text-[--text-primary] font-semibold">{loading ? "—" : formatVolume(totalVol)}</strong> total Poly vol</span>
+          <span><strong className="text-(--text-primary) font-semibold">{loading ? "—" : formatVolume(totalVol)}</strong> total Poly vol</span>
         )}
       </div>
 
       {/* Filters */}
-      <div className="sticky top-14 z-10 py-3 bg-[--bg]/90 backdrop-blur-xl -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-[--border-subtle] mb-5 space-y-2.5">
+      <div className="sticky top-14 z-10 py-3 bg-(--bg)/90 backdrop-blur-xl -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-(--border-subtle) mb-5 space-y-2.5">
         <div className="flex flex-col sm:flex-row gap-2.5">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--text-muted)" />
             <input
               type="text"
               placeholder="Search events or outcomes..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg bg-[--surface] border border-[--border] text-[--text-primary] text-sm placeholder-[--text-muted] focus:outline-none focus:border-[--text-muted] transition-colors"
+              className="w-full pl-10 pr-4 py-2 rounded-lg bg-(--surface) border border-(--border) text-(--text-primary) text-sm placeholder-(--text-muted) focus:outline-none focus:border-(--text-muted) transition-colors"
             />
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[--text-muted] text-xs shrink-0">Min:</span>
+            <span className="text-(--text-muted) text-xs shrink-0">Min:</span>
             {[0, 5, 10, 20].map((v) => (
               <button key={v} onClick={() => setMinProfit(v)}
                 className={`btn-pill px-2.5 py-1.5 rounded-lg text-xs font-medium ${
                   minProfit === v
-                    ? "bg-[--surface] text-[--text-primary] border border-[--border]"
-                    : "text-[--text-muted] hover:text-[--text-primary]"
+                    ? "bg-(--surface) text-(--text-primary) border border-(--border)"
+                    : "text-(--text-muted) hover:text-(--text-primary)"
                 }`}
               >
                 {v === 0 ? "All" : `>${v}%`}
@@ -306,13 +306,13 @@ function ArbitrageContent() {
         </div>
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <Filter className="w-3.5 h-3.5 text-[--text-muted] shrink-0" />
+            <Filter className="w-3.5 h-3.5 text-(--text-muted) shrink-0" />
             {categories.map((c) => (
               <button key={c} onClick={() => setCategory(c)}
                 className={`btn-pill px-2.5 py-1.5 rounded-lg text-xs font-medium ${
                   category === c
-                    ? "bg-[--surface] text-[--text-primary] border border-[--border]"
-                    : "text-[--text-muted] hover:text-[--text-primary]"
+                    ? "bg-(--surface) text-(--text-primary) border border-(--border)"
+                    : "text-(--text-muted) hover:text-(--text-primary)"
                 }`}
               >
                 {c}
@@ -320,13 +320,13 @@ function ArbitrageContent() {
             ))}
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[--text-muted] text-xs">Sort:</span>
+            <span className="text-(--text-muted) text-xs">Sort:</span>
             {(["profit", "spread", "volume", "date", "match"] as const).map((s) => (
               <button key={s} onClick={() => setSortBy(s)}
                 className={`btn-pill px-2.5 py-1.5 rounded-lg text-xs font-medium capitalize ${
                   sortBy === s
-                    ? "bg-[--surface] text-[--text-primary] border border-[--border]"
-                    : "text-[--text-muted] hover:text-[--text-primary]"
+                    ? "bg-(--surface) text-(--text-primary) border border-(--border)"
+                    : "text-(--text-muted) hover:text-(--text-primary)"
                 }`}
               >
                 {s}
@@ -337,7 +337,7 @@ function ArbitrageContent() {
       </div>
 
       {!loading && (
-        <p className="text-[--text-muted] text-xs mb-5">
+        <p className="text-(--text-muted) text-xs mb-5">
           {Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} opportunities
         </p>
       )}
@@ -349,7 +349,7 @@ function ArbitrageContent() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-24 text-[--text-muted]">
+        <div className="text-center py-24 text-(--text-muted)">
           <Zap className="w-10 h-10 mx-auto mb-3 opacity-20" />
           <p className="text-sm">No opportunities match your filters.</p>
         </div>
@@ -372,7 +372,7 @@ function ArbitrageContent() {
             <div className="flex justify-center mt-2">
               <button
                 onClick={() => setPage((p) => p + 1)}
-                className="btn-pill px-4 py-2 text-xs text-[--text-muted] hover:text-[--text-primary] border border-[--border] rounded-lg"
+                className="btn-pill px-4 py-2 text-xs text-(--text-muted) hover:text-(--text-primary) border border-(--border) rounded-lg"
               >
                 Load more ({filtered.length - page * PAGE_SIZE} remaining)
               </button>
@@ -382,7 +382,7 @@ function ArbitrageContent() {
       )}
 
       {!loading && (
-        <p className="text-[--text-muted] text-xs mt-6">
+        <p className="text-(--text-muted) text-xs mt-6">
           * Very high profit % values may reflect stale data or market edge cases. Always verify prices directly.
         </p>
       )}
@@ -392,7 +392,7 @@ function ArbitrageContent() {
 
 export default function ArbitragePage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center py-40 text-[--text-muted] text-sm">Loading...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-40 text-(--text-muted) text-sm">Loading...</div>}>
       <ArbitrageContent />
     </Suspense>
   );

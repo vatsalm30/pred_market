@@ -118,12 +118,12 @@ export default function BlogAdminPage() {
     }
   }
 
-  const inputCls = "w-full px-3 py-2 bg-[--surface] border border-[--border-subtle] rounded-lg text-[--text-primary] text-sm focus:outline-none focus:border-[#00B3A1]";
+  const inputCls = "w-full px-3 py-2 bg-(--surface) border border-(--border-subtle) rounded-lg text-(--text-primary) text-sm focus:outline-none focus:border-[#00B3A1]";
 
   if (!unlocked) {
     return (
       <div className="max-w-sm mx-auto px-4 py-20">
-        <h1 className="text-xl font-bold text-[--text-primary] mb-6">Blog Admin</h1>
+        <h1 className="text-xl font-bold text-(--text-primary) mb-6">Blog Admin</h1>
         <form onSubmit={handleUnlock} className="space-y-4">
           <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} autoFocus />
           {authError && <p className="text-red-500 text-sm">{authError}</p>}
@@ -138,63 +138,63 @@ export default function BlogAdminPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-xl font-bold text-[--text-primary]">
+        <h1 className="text-xl font-bold text-(--text-primary)">
           {editingPost ? "Edit post" : "Add blog post"}
         </h1>
-        <a href="/blog" className="text-sm text-[--text-muted] hover:text-[--text-secondary]">← /blog</a>
+        <a href="/blog" className="text-sm text-(--text-muted) hover:text-(--text-secondary)">← /blog</a>
       </div>
 
       {editingPost && (
         <div className="flex items-center justify-between mb-5 px-3 py-2 bg-[#00B3A1]/10 border border-[#00B3A1]/30 rounded-lg">
           <p className="text-sm text-[#00B3A1] truncate">Editing: {editingPost.title}</p>
-          <button onClick={clearForm} className="text-xs text-[--text-muted] hover:text-[--text-primary] shrink-0 ml-4">✕ New post</button>
+          <button onClick={clearForm} className="text-xs text-(--text-muted) hover:text-(--text-primary) shrink-0 ml-4">✕ New post</button>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-xs text-[--text-muted] mb-1.5">Title</label>
+          <label className="block text-xs text-(--text-muted) mb-1.5">Title</label>
           <input type="text" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Top Arb Gaps: Trump vs Fed Rate Decision" className={inputCls} />
         </div>
 
         <div>
-          <label className="block text-xs text-[--text-muted] mb-1.5">Body</label>
+          <label className="block text-xs text-(--text-muted) mb-1.5">Body</label>
           <textarea required rows={5} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder="Market analysis paragraph…" className={`${inputCls} resize-y`} />
         </div>
 
         <div className="flex gap-4">
           <div className="flex-1">
-            <label className="block text-xs text-[--text-muted] mb-1.5">Tags (comma-separated)</label>
+            <label className="block text-xs text-(--text-muted) mb-1.5">Tags (comma-separated)</label>
             <input type="text" value={form.tagsRaw} onChange={(e) => setForm({ ...form, tagsRaw: e.target.value })} placeholder="Polymarket, Kalshi, Arbitrage…" className={inputCls} />
           </div>
           <div className="w-40">
-            <label className="block text-xs text-[--text-muted] mb-1.5">Date</label>
+            <label className="block text-xs text-(--text-muted) mb-1.5">Date</label>
             <input type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={inputCls} />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs text-[--text-muted] mb-1.5">Image URL <span className="text-[--text-muted] font-normal">(optional — paste any image URL)</span></label>
+          <label className="block text-xs text-(--text-muted) mb-1.5">Image URL <span className="text-(--text-muted) font-normal">(optional — paste any image URL)</span></label>
           <input type="url" value={form.ogImage} onChange={(e) => setForm({ ...form, ogImage: e.target.value })} placeholder="https://…" className={inputCls} />
           {form.ogImage && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={form.ogImage} alt="" className="mt-2 h-24 w-auto rounded-md object-cover border border-[--border-subtle]" referrerPolicy="no-referrer" onError={(e) => (e.currentTarget.style.display = "none")} />
+            <img src={form.ogImage} alt="" className="mt-2 h-24 w-auto rounded-md object-cover border border-(--border-subtle)" referrerPolicy="no-referrer" onError={(e) => (e.currentTarget.style.display = "none")} />
           )}
         </div>
 
         <div>
-          <label className="block text-xs text-[--text-muted] mb-1.5">Meta title <span className="text-[--text-muted] font-normal">(defaults to title)</span></label>
+          <label className="block text-xs text-(--text-muted) mb-1.5">Meta title <span className="text-(--text-muted) font-normal">(defaults to title)</span></label>
           <input type="text" value={form.metaTitle} onChange={(e) => setForm({ ...form, metaTitle: e.target.value })} placeholder="SEO title…" className={inputCls} />
         </div>
 
         <div>
-          <label className="block text-xs text-[--text-muted] mb-1.5">Meta description <span className="text-[--text-muted] font-normal">(defaults to first sentence)</span></label>
+          <label className="block text-xs text-(--text-muted) mb-1.5">Meta description <span className="text-(--text-muted) font-normal">(defaults to first sentence)</span></label>
           <textarea rows={2} value={form.metaDescription} onChange={(e) => setForm({ ...form, metaDescription: e.target.value })} placeholder="SEO description…" className={`${inputCls} resize-none`} />
         </div>
 
         <div>
-          <label className="block text-xs text-[--text-muted] mb-1.5">
-            Table <span className="text-[--text-muted] font-normal">(JSON array, leave as [] if none)</span>
+          <label className="block text-xs text-(--text-muted) mb-1.5">
+            Table <span className="text-(--text-muted) font-normal">(JSON array, leave as [] if none)</span>
           </label>
           <textarea
             rows={8}
@@ -217,19 +217,19 @@ export default function BlogAdminPage() {
       {/* Existing posts */}
       {posts.length > 0 && (
         <div className="mt-12">
-          <p className="text-xs font-medium text-[--text-muted] uppercase tracking-wider mb-4">Existing posts</p>
+          <p className="text-xs font-medium text-(--text-muted) uppercase tracking-wider mb-4">Existing posts</p>
           <div className="space-y-px">
             {posts.map((p) => (
               <button
                 key={p.slug}
                 onClick={() => loadForEdit(p)}
-                className={`w-full text-left py-3 px-3 rounded-lg border transition-colors ${editingPost?.slug === p.slug ? "border-[#00B3A1]/50 bg-[#00B3A1]/10" : "border-transparent hover:bg-[--surface-hover]"}`}
+                className={`w-full text-left py-3 px-3 rounded-lg border transition-colors ${editingPost?.slug === p.slug ? "border-[#00B3A1]/50 bg-[#00B3A1]/10" : "border-transparent hover:bg-(--surface-hover)"}`}
               >
-                <p className="text-sm font-medium text-[--text-primary] truncate">{p.title}</p>
+                <p className="text-sm font-medium text-(--text-primary) truncate">{p.title}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs text-[--text-muted]">{fmtDate(p.date)}</span>
+                  <span className="text-xs text-(--text-muted)">{fmtDate(p.date)}</span>
                   {p.tags.length > 0 && (
-                    <span className="text-xs text-[--text-muted] truncate">{p.tags.slice(0, 3).join(", ")}</span>
+                    <span className="text-xs text-(--text-muted) truncate">{p.tags.slice(0, 3).join(", ")}</span>
                   )}
                 </div>
               </button>

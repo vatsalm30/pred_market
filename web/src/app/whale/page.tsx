@@ -61,17 +61,17 @@ export default function WhalePage() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <span className="text-2xl">🐋</span>
-          <h1 className="text-2xl font-bold text-[--text-primary]">Whale Tracker</h1>
-          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[--surface] border border-[--border-subtle]">
+          <h1 className="text-2xl font-bold text-(--text-primary)">Whale Tracker</h1>
+          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-(--surface) border border-(--border-subtle)">
             <span className="w-1.5 h-1.5 rounded-full bg-[#00B3A1] live-dot" />
-            <span className="text-[10px] uppercase tracking-widest text-[--text-muted] font-medium">Live</span>
+            <span className="text-[10px] uppercase tracking-widest text-(--text-muted) font-medium">Live</span>
           </span>
         </div>
-        <p className="text-[--text-secondary] text-sm mt-1">
+        <p className="text-(--text-secondary) text-sm mt-1">
           Large trades on Polymarket — ${(threshold / 1000).toFixed(0)}K+ per transaction, across the top 25 markets by volume.
         </p>
         {lastUpdated && (
-          <p className="text-[--text-muted] text-xs mt-1">
+          <p className="text-(--text-muted) text-xs mt-1">
             Updated {timeAgo(Math.floor(lastUpdated.getTime() / 1000))}
           </p>
         )}
@@ -80,27 +80,27 @@ export default function WhalePage() {
       {loading ? (
         <div className="space-y-2">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-14 rounded-lg bg-[--surface] animate-pulse" />
+            <div key={i} className="h-14 rounded-lg bg-(--surface) animate-pulse" />
           ))}
         </div>
       ) : trades.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-4xl mb-4">🐋</p>
-          <p className="text-[--text-secondary] text-sm">No whale trades detected yet.</p>
-          <p className="text-[--text-muted] text-xs mt-1">Tracker scans every 5 minutes. Check back shortly.</p>
+          <p className="text-(--text-secondary) text-sm">No whale trades detected yet.</p>
+          <p className="text-(--text-muted) text-xs mt-1">Tracker scans every 5 minutes. Check back shortly.</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[--border-subtle]">
-                <th className="text-left px-3 py-3 text-[--text-muted] font-medium text-xs uppercase tracking-wider w-24">Time</th>
-                <th className="text-left px-3 py-3 text-[--text-muted] font-medium text-xs uppercase tracking-wider">Market</th>
-                <th className="text-left px-3 py-3 text-[--text-muted] font-medium text-xs uppercase tracking-wider hidden sm:table-cell">Outcome</th>
-                <th className="text-center px-3 py-3 text-[--text-muted] font-medium text-xs uppercase tracking-wider w-20">Side</th>
-                <th className="text-right px-3 py-3 text-[--text-muted] font-medium text-xs uppercase tracking-wider w-28">Amount</th>
-                <th className="text-right px-3 py-3 text-[--text-muted] font-medium text-xs uppercase tracking-wider w-20 hidden md:table-cell">Price</th>
-                <th className="text-right px-3 py-3 text-[--text-muted] font-medium text-xs uppercase tracking-wider w-28 hidden lg:table-cell">Trader</th>
+              <tr className="border-b border-(--border-subtle)">
+                <th className="text-left px-3 py-3 text-(--text-muted) font-medium text-xs uppercase tracking-wider w-24">Time</th>
+                <th className="text-left px-3 py-3 text-(--text-muted) font-medium text-xs uppercase tracking-wider">Market</th>
+                <th className="text-left px-3 py-3 text-(--text-muted) font-medium text-xs uppercase tracking-wider hidden sm:table-cell">Outcome</th>
+                <th className="text-center px-3 py-3 text-(--text-muted) font-medium text-xs uppercase tracking-wider w-20">Side</th>
+                <th className="text-right px-3 py-3 text-(--text-muted) font-medium text-xs uppercase tracking-wider w-28">Amount</th>
+                <th className="text-right px-3 py-3 text-(--text-muted) font-medium text-xs uppercase tracking-wider w-20 hidden md:table-cell">Price</th>
+                <th className="text-right px-3 py-3 text-(--text-muted) font-medium text-xs uppercase tracking-wider w-28 hidden lg:table-cell">Trader</th>
               </tr>
             </thead>
             <tbody>
@@ -111,9 +111,9 @@ export default function WhalePage() {
                 return (
                   <tr
                     key={t.id}
-                    className="border-b border-[--border-subtle] last:border-0 hover:bg-[--surface-hover] transition-colors"
+                    className="border-b border-(--border-subtle) last:border-0 hover:bg-(--surface-hover) transition-colors"
                   >
-                    <td className="px-3 py-3.5 text-[--text-muted] text-xs tabular-nums whitespace-nowrap">
+                    <td className="px-3 py-3.5 text-(--text-muted) text-xs tabular-nums whitespace-nowrap">
                       {timeAgo(t.timestamp)}
                     </td>
                     <td className="px-3 py-3.5 max-w-[180px] sm:max-w-[240px]">
@@ -121,13 +121,13 @@ export default function WhalePage() {
                         href={polyUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[--text-primary] font-medium truncate block hover:text-[#00B3A1] transition-colors"
+                        className="text-(--text-primary) font-medium truncate block hover:text-[#00B3A1] transition-colors"
                         title={t.marketTitle}
                       >
                         {t.marketTitle}
                       </a>
                     </td>
-                    <td className="px-3 py-3.5 text-[--text-secondary] text-xs hidden sm:table-cell">
+                    <td className="px-3 py-3.5 text-(--text-secondary) text-xs hidden sm:table-cell">
                       {t.outcome}
                     </td>
                     <td className="px-3 py-3.5 text-center">
@@ -141,10 +141,10 @@ export default function WhalePage() {
                         {t.side}
                       </span>
                     </td>
-                    <td className="px-3 py-3.5 text-right font-mono font-semibold text-[--text-primary] tabular-nums whitespace-nowrap">
+                    <td className="px-3 py-3.5 text-right font-mono font-semibold text-(--text-primary) tabular-nums whitespace-nowrap">
                       {fmtUsd(t.usdValue)}
                     </td>
-                    <td className="px-3 py-3.5 text-right font-mono text-[--text-secondary] tabular-nums hidden md:table-cell">
+                    <td className="px-3 py-3.5 text-right font-mono text-(--text-secondary) tabular-nums hidden md:table-cell">
                       {(t.price * 100).toFixed(1)}¢
                     </td>
                     <td className="px-3 py-3.5 text-right hidden lg:table-cell">
@@ -153,12 +153,12 @@ export default function WhalePage() {
                           href={`https://polygonscan.com/tx/${t.txHash}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="font-mono text-xs text-[--text-muted] hover:text-[#00B3A1] transition-colors"
+                          className="font-mono text-xs text-(--text-muted) hover:text-[#00B3A1] transition-colors"
                         >
                           {shortAddr(t.traderAddress)}
                         </a>
                       ) : (
-                        <span className="font-mono text-xs text-[--text-muted]">{shortAddr(t.traderAddress)}</span>
+                        <span className="font-mono text-xs text-(--text-muted)">{shortAddr(t.traderAddress)}</span>
                       )}
                     </td>
                   </tr>
@@ -169,7 +169,7 @@ export default function WhalePage() {
         </div>
       )}
 
-      <p className="text-[--text-muted] text-xs mt-6 text-center">
+      <p className="text-(--text-muted) text-xs mt-6 text-center">
         Data sourced from Polymarket CLOB API. Refreshes every 30 seconds.
       </p>
     </div>

@@ -26,9 +26,9 @@ function pct(v: number | null | undefined): string {
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="surface rounded-xl px-4 py-3">
-      <p className="text-[--text-muted] text-[10px] uppercase tracking-widest font-medium mb-1">{label}</p>
-      <p className="text-[--text-primary] text-lg font-bold tabular-nums">{value}</p>
-      {sub && <p className="text-[--text-muted] text-[11px] mt-0.5">{sub}</p>}
+      <p className="text-(--text-muted) text-[10px] uppercase tracking-widest font-medium mb-1">{label}</p>
+      <p className="text-(--text-primary) text-lg font-bold tabular-nums">{value}</p>
+      {sub && <p className="text-(--text-muted) text-[11px] mt-0.5">{sub}</p>}
     </div>
   );
 }
@@ -49,9 +49,9 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
 
       return (
         <div className="surface rounded-2xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-[--border-subtle] flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[--text-primary]">Outcome Probabilities</h2>
-            <div className="flex items-center gap-1.5 text-xs text-[--text-muted]">
+          <div className="px-5 py-4 border-b border-(--border-subtle) flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-(--text-primary)">Outcome Probabilities</h2>
+            <div className="flex items-center gap-1.5 text-xs text-(--text-muted)">
               <Logo size={13} />
               <span>{ptName}</span>
             </div>
@@ -63,10 +63,10 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
               return (
                 <div key={i} className="group/bar">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-[--text-secondary]">{o.label}</span>
+                    <span className="text-sm text-(--text-secondary)">{o.label}</span>
                     <span className="font-mono text-sm font-semibold" style={{ color }}>{pctVal}</span>
                   </div>
-                  <div className="relative h-5 rounded-full bg-[--bg-subtle] group-hover/bar:bg-[--surface-hover] transition-colors">
+                  <div className="relative h-5 rounded-full bg-(--bg-subtle) group-hover/bar:bg-(--surface-hover) transition-colors">
                     <div
                       className="absolute inset-y-0 left-0 rounded-full flex items-center justify-end pr-2 transition-all"
                       style={{ width: `${w}%`, minWidth: "10px", background: color + "CC" }}
@@ -79,7 +79,7 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
             })}
           </div>
           {event.num_outcomes > topOutcomes.length && (
-            <p className="px-5 pb-4 text-xs text-[--text-muted]">
+            <p className="px-5 pb-4 text-xs text-(--text-muted)">
               Showing top {topOutcomes.length} of {event.num_outcomes} outcomes
             </p>
           )}
@@ -96,8 +96,8 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
 
     return (
       <div className="surface rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-[--border-subtle]">
-          <h2 className="text-sm font-semibold text-[--text-primary]">Probability</h2>
+        <div className="px-5 py-4 border-b border-(--border-subtle)">
+          <h2 className="text-sm font-semibold text-(--text-primary)">Probability</h2>
         </div>
         <div className="px-5 py-4 space-y-4">
           {rows.map((row) => {
@@ -106,12 +106,12 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
               <div key={row.label} className="group/bar">
                 <div className="flex items-center gap-2 mb-1.5">
                   <row.Logo size={13} />
-                  <span className="text-sm text-[--text-secondary]">{row.label}</span>
+                  <span className="text-sm text-(--text-secondary)">{row.label}</span>
                   <span className="ml-auto font-mono text-sm font-semibold" style={{ color: row.color }}>
                     {pct(row.price)} YES
                   </span>
                 </div>
-                <div className="relative h-5 rounded-full bg-[--bg-subtle] group-hover/bar:bg-[--surface-hover] transition-colors">
+                <div className="relative h-5 rounded-full bg-(--bg-subtle) group-hover/bar:bg-(--surface-hover) transition-colors">
                   <div
                     className="absolute inset-y-0 left-0 rounded-full flex items-center justify-end pr-2"
                     style={{ width: `${yesPct}%`, minWidth: "10px", background: row.color + "CC" }}
@@ -119,7 +119,7 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
                     {yesPct > 12 && <span className="text-white/90 text-[10px] font-medium">{pct(row.price)}</span>}
                   </div>
                   {(100 - yesPct) > 14 && (
-                    <span className="absolute inset-y-0 right-0 flex items-center pr-2 text-[10px] text-[--text-muted]">
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-2 text-[10px] text-(--text-muted)">
                       {(100 - yesPct).toFixed(1)}% NO
                     </span>
                   )}
@@ -142,8 +142,8 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
     ];
     return (
       <div className="surface rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-[--border-subtle]">
-          <h2 className="text-sm font-semibold text-[--text-primary]">Probability Comparison</h2>
+        <div className="px-5 py-4 border-b border-(--border-subtle)">
+          <h2 className="text-sm font-semibold text-(--text-primary)">Probability Comparison</h2>
         </div>
         <div className="px-5 py-4 space-y-4">
           {rows.map((row) => {
@@ -153,12 +153,12 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
               <div key={row.label} className="group/bar">
                 <div className="flex items-center gap-2 mb-1.5">
                   {row.logo}
-                  <span className="text-sm text-[--text-secondary]">{row.label}</span>
+                  <span className="text-sm text-(--text-secondary)">{row.label}</span>
                   <span className="ml-auto font-mono text-sm font-semibold" style={{ color: row.color }}>
                     {pct(row.yes)} YES
                   </span>
                 </div>
-                <div className="relative h-5 rounded-full bg-[--bg-subtle] group-hover/bar:bg-[--surface-hover] transition-colors">
+                <div className="relative h-5 rounded-full bg-(--bg-subtle) group-hover/bar:bg-(--surface-hover) transition-colors">
                   <div
                     className="absolute inset-y-0 left-0 rounded-full flex items-center justify-end pr-2"
                     style={{ width: `${yesPct}%`, minWidth: "10px", background: row.color + "CC" }}
@@ -166,7 +166,7 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
                     {yesPct > 12 && <span className="text-white/90 text-[10px] font-medium">{pct(row.yes)}</span>}
                   </div>
                   {(100 - yesPct) > 14 && (
-                    <span className="absolute inset-y-0 right-0 flex items-center pr-2 text-[10px] text-[--text-muted]">
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-2 text-[10px] text-(--text-muted)">
                       {pct(1 - row.yes)} NO
                     </span>
                   )}
@@ -188,9 +188,9 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
 
   return (
     <div className="surface rounded-2xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-[--border-subtle] flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-[--text-primary]">Outcome Comparison</h2>
-        <div className="flex items-center gap-3 text-[10px] text-[--text-muted]">
+      <div className="px-5 py-4 border-b border-(--border-subtle) flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-(--text-primary)">Outcome Comparison</h2>
+        <div className="flex items-center gap-3 text-[10px] text-(--text-muted)">
           <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#1652F0]/80" /> Polymarket</span>
           <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#00B3A1]/80" /> Kalshi</span>
         </div>
@@ -198,15 +198,15 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[--border-subtle]">
-              <th className="text-left px-5 py-2.5 text-[--text-muted] font-medium text-xs">Outcome</th>
+            <tr className="border-b border-(--border-subtle)">
+              <th className="text-left px-5 py-2.5 text-(--text-muted) font-medium text-xs">Outcome</th>
               <th className="text-right px-4 py-2.5 text-xs">
-                <span className="flex items-center justify-end gap-1 text-[--text-muted]"><PolymarketLogo size={11} /> YES</span>
+                <span className="flex items-center justify-end gap-1 text-(--text-muted)"><PolymarketLogo size={11} /> YES</span>
               </th>
               <th className="text-right px-4 py-2.5 text-xs">
-                <span className="flex items-center justify-end gap-1 text-[--text-muted]"><KalshiLogo size={11} /> YES</span>
+                <span className="flex items-center justify-end gap-1 text-(--text-muted)"><KalshiLogo size={11} /> YES</span>
               </th>
-              <th className="text-right px-5 py-2.5 text-xs text-[--text-muted] hidden sm:table-cell">Spread</th>
+              <th className="text-right px-5 py-2.5 text-xs text-(--text-muted) hidden sm:table-cell">Spread</th>
             </tr>
           </thead>
           <tbody>
@@ -215,18 +215,18 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
               const kalshiYes = o.kalshi_yes_ask as number | undefined;
               const spread    = polyYes != null && kalshiYes != null ? Math.abs(polyYes - kalshiYes) * 100 : null;
               const spreadColor =
-                spread == null  ? "text-[--text-muted]"
-                : spread >= 3   ? "text-[--arb-amber] font-semibold"
+                spread == null  ? "text-(--text-muted)"
+                : spread >= 3   ? "text-(--arb-amber) font-semibold"
                 : spread >= 1   ? "text-emerald-500 dark:text-emerald-400"
-                : "text-[--text-muted]";
+                : "text-(--text-muted)";
               return (
-                <tr key={i} className="border-b border-[--border-subtle] last:border-0 hover:bg-[--surface-hover] transition-colors">
-                  <td className="px-5 py-2.5 text-[--text-secondary] text-sm">{o.poly_label}</td>
+                <tr key={i} className="border-b border-(--border-subtle) last:border-0 hover:bg-(--surface-hover) transition-colors">
+                  <td className="px-5 py-2.5 text-(--text-secondary) text-sm">{o.poly_label}</td>
                   <td className="px-4 py-2.5 text-right">
                     <span className="text-[#1652F0] dark:text-[#5b8df8] font-mono text-xs font-medium">{pct(polyYes)}</span>
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <span className="text-[--kalshi-teal] font-mono text-xs font-medium">{pct(kalshiYes)}</span>
+                    <span className="text-(--kalshi-teal) font-mono text-xs font-medium">{pct(kalshiYes)}</span>
                   </td>
                   <td className={`px-5 py-2.5 text-right font-mono text-xs hidden sm:table-cell ${spreadColor}`}>
                     {spread != null ? `${spread.toFixed(1)}%` : "—"}
@@ -238,7 +238,7 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
         </table>
       </div>
       {matched.outcomes.length > 10 && (
-        <p className="px-5 py-3 text-[10px] text-[--text-muted] border-t border-[--border-subtle]">
+        <p className="px-5 py-3 text-[10px] text-(--text-muted) border-t border-(--border-subtle)">
           Showing top 10 of {matched.outcomes.length} outcomes
         </p>
       )}
@@ -250,17 +250,17 @@ function ArbSection({ opps }: { opps: ArbitrageOpportunity[] }) {
   if (!opps.length) return null;
   return (
     <div className="surface rounded-2xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-[--border-subtle] flex items-center gap-2">
-        <Zap className="w-4 h-4 text-[--arb-amber]" />
-        <h2 className="text-sm font-semibold text-[--text-primary]">Arbitrage Opportunities</h2>
-        <span className="ml-auto text-xs text-[--text-muted]">{opps.length} found</span>
+      <div className="px-5 py-4 border-b border-(--border-subtle) flex items-center gap-2">
+        <Zap className="w-4 h-4 text-(--arb-amber)" />
+        <h2 className="text-sm font-semibold text-(--text-primary)">Arbitrage Opportunities</h2>
+        <span className="ml-auto text-xs text-(--text-muted)">{opps.length} found</span>
       </div>
-      <div className="divide-y divide-[--border-subtle]">
+      <div className="divide-y divide-(--border-subtle)">
         {opps.map((opp, i) => (
-          <div key={i} className="px-5 py-3.5 flex items-center gap-4 hover:bg-[--surface-hover] transition-colors">
+          <div key={i} className="px-5 py-3.5 flex items-center gap-4 hover:bg-(--surface-hover) transition-colors">
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-[--text-primary] font-medium">{opp.poly_label}</p>
-              <div className="flex items-center gap-2 mt-0.5 text-xs text-[--text-muted]">
+              <p className="text-sm text-(--text-primary) font-medium">{opp.poly_label}</p>
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-(--text-muted)">
                 <span className="flex items-center gap-1">
                   <KalshiLogo size={11} /> {opp.kalshi_leg} @ {(opp.kalshi_ask * 100).toFixed(1)}¢
                 </span>
@@ -280,7 +280,7 @@ function ArbSection({ opps }: { opps: ArbitrageOpportunity[] }) {
                 </a>
               )}
               {opp.kalshi_url && (
-                <a href={opp.kalshi_url} target="_blank" rel="noopener noreferrer" aria-label="View on Kalshi" className="text-[--kalshi-teal] hover:opacity-70 transition-opacity">
+                <a href={opp.kalshi_url} target="_blank" rel="noopener noreferrer" aria-label="View on Kalshi" className="text-(--kalshi-teal) hover:opacity-70 transition-opacity">
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               )}
@@ -324,12 +324,12 @@ export default function EventDetailClient({ slug }: { slug: string }) {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-4">
-        <div className="h-8 w-32 rounded-lg bg-[--surface] animate-pulse" />
-        <div className="h-24 rounded-2xl bg-[--surface] animate-pulse" />
+        <div className="h-8 w-32 rounded-lg bg-(--surface) animate-pulse" />
+        <div className="h-24 rounded-2xl bg-(--surface) animate-pulse" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-16 rounded-xl bg-[--surface] animate-pulse" />)}
+          {[...Array(4)].map((_, i) => <div key={i} className="h-16 rounded-xl bg-(--surface) animate-pulse" />)}
         </div>
-        <div className="h-48 rounded-2xl bg-[--surface] animate-pulse" />
+        <div className="h-48 rounded-2xl bg-(--surface) animate-pulse" />
       </div>
     );
   }
@@ -337,8 +337,8 @@ export default function EventDetailClient({ slug }: { slug: string }) {
   if (!event) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-        <p className="text-[--text-muted] text-sm mb-4">Market not found.</p>
-        <Link href="/events" className="link-arrow text-xs text-[--text-secondary] flex items-center justify-center gap-1">
+        <p className="text-(--text-muted) text-sm mb-4">Market not found.</p>
+        <Link href="/events" className="link-arrow text-xs text-(--text-secondary) flex items-center justify-center gap-1">
           <ArrowLeft className="w-3 h-3" /> Back to all markets
         </Link>
       </div>
@@ -351,10 +351,10 @@ export default function EventDetailClient({ slug }: { slug: string }) {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs text-[--text-muted] mb-6">
-        <Link href="/" className="hover:text-[--text-primary] transition-colors">Home</Link>
+      <div className="flex items-center gap-2 text-xs text-(--text-muted) mb-6">
+        <Link href="/" className="hover:text-(--text-primary) transition-colors">Home</Link>
         <span>/</span>
-        <Link href="/events" className="hover:text-[--text-primary] transition-colors">All Markets</Link>
+        <Link href="/events" className="hover:text-(--text-primary) transition-colors">All Markets</Link>
         <span>/</span>
         <span className="truncate max-w-[200px]">{event.title}</span>
       </div>
@@ -364,7 +364,7 @@ export default function EventDetailClient({ slug }: { slug: string }) {
         <div className="flex items-start gap-4">
           <EventIcon src={event.icon || null} alt={event.title} size={56} className="shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-[--text-primary] leading-snug mb-3">{event.title}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-(--text-primary) leading-snug mb-3">{event.title}</h1>
 
             {/* Platform badges + links */}
             <div className="flex flex-wrap items-center gap-3">
@@ -375,7 +375,7 @@ export default function EventDetailClient({ slug }: { slug: string }) {
                   {event.poly_url && (
                     <a href={event.poly_url} target="_blank" rel="noopener noreferrer"
                       aria-label="View on Polymarket"
-                      className="text-[--text-muted] hover:text-[#1652F0] transition-colors">
+                      className="text-(--text-muted) hover:text-[#1652F0] transition-colors">
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   )}
@@ -384,11 +384,11 @@ export default function EventDetailClient({ slug }: { slug: string }) {
               {hasKalshi && (
                 <div className="flex items-center gap-2">
                   <KalshiLogo size={18} />
-                  <span className="text-sm text-[--kalshi-teal] font-medium">Kalshi</span>
+                  <span className="text-sm text-(--kalshi-teal) font-medium">Kalshi</span>
                   {event.kalshi_url && (
                     <a href={event.kalshi_url} target="_blank" rel="noopener noreferrer"
                       aria-label="View on Kalshi"
-                      className="text-[--text-muted] hover:text-[--kalshi-teal] transition-colors">
+                      className="text-(--text-muted) hover:text-(--kalshi-teal) transition-colors">
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   )}
@@ -446,14 +446,14 @@ export default function EventDetailClient({ slug }: { slug: string }) {
       {event.is_matched && (
         <div className="surface rounded-xl px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-[--text-muted]" />
-            <span className="text-sm text-[--text-secondary]">
+            <TrendingUp className="w-4 h-4 text-(--text-muted)" />
+            <span className="text-sm text-(--text-secondary)">
               This event is matched across both platforms.
             </span>
           </div>
           <Link
             href={`/events?view=compare&search=${encodeURIComponent(event.title)}`}
-            className="link-arrow text-xs text-[--arb-amber] flex items-center gap-1"
+            className="link-arrow text-xs text-(--arb-amber) flex items-center gap-1"
           >
             Compare <ArrowLeft className="w-3 h-3 rotate-180" />
           </Link>
@@ -462,7 +462,7 @@ export default function EventDetailClient({ slug }: { slug: string }) {
 
       {/* Back link */}
       <div className="mt-8 flex items-center gap-2">
-        <Link href="/events" className="flex items-center gap-1.5 text-xs text-[--text-muted] hover:text-[--text-primary] transition-colors">
+        <Link href="/events" className="flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text-primary) transition-colors">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to All Markets
         </Link>
       </div>

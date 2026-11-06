@@ -21,10 +21,10 @@ export function BinaryOddsChart({ outcomes }: { outcomes: MatchedMarket[] }) {
   ].filter((r) => r.yes != null);
 
   return (
-    <div className="px-5 py-4 border-t border-[--border-subtle] bg-[--bg-subtle] space-y-3">
+    <div className="px-5 py-4 border-t border-(--border-subtle) bg-(--bg-subtle) space-y-3">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] uppercase tracking-widest text-[--text-muted] font-medium">Odds</span>
-        <div className="flex items-center gap-3 text-[10px] text-[--text-muted]">
+        <span className="text-[10px] uppercase tracking-widest text-(--text-muted) font-medium">Odds</span>
+        <div className="flex items-center gap-3 text-[10px] text-(--text-muted)">
           {hasPoly   && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#1652F0]/80" /> Polymarket</span>}
           {hasKalshi && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#00B3A1]/80" /> Kalshi</span>}
         </div>
@@ -36,12 +36,12 @@ export function BinaryOddsChart({ outcomes }: { outcomes: MatchedMarket[] }) {
           <div key={row.label} className="group/bar">
             <div className="flex items-center gap-2 mb-1">
               {row.logo}
-              <span className="text-[11px] text-[--text-secondary]">{row.label}</span>
+              <span className="text-[11px] text-(--text-secondary)">{row.label}</span>
               <span className="ml-auto font-mono text-[12px] font-semibold" style={{ color: row.color }}>
                 {pct(row.yes)} YES
               </span>
             </div>
-            <div className="relative h-5 rounded-full bg-[--surface-hover] select-none group-hover/bar:bg-[--border] transition-colors">
+            <div className="relative h-5 rounded-full bg-(--surface-hover) select-none group-hover/bar:bg-(--border) transition-colors">
               <div
                 className={`binary-fill ${row.label === "Polymarket" ? "binary-fill-poly" : "binary-fill-kalshi"} absolute inset-y-0 left-0 rounded-full flex items-center justify-end pr-1.5`}
                 style={{ width: `${yesPct}%`, minWidth: "10px", background: row.color + "CC" }}
@@ -50,7 +50,7 @@ export function BinaryOddsChart({ outcomes }: { outcomes: MatchedMarket[] }) {
               </div>
               {noPct > 14 && (
                 <span
-                  className="absolute inset-y-0 right-0 flex items-center pr-1.5 text-[10px] text-[--text-muted] font-medium"
+                  className="absolute inset-y-0 right-0 flex items-center pr-1.5 text-[10px] text-(--text-muted) font-medium"
                   style={{ left: `max(${yesPct}%, 10px)` }}
                 >
                   {pct(1 - row.yes!)} NO
@@ -89,12 +89,12 @@ export function MultiOddsChart({
   );
 
   return (
-    <div className="px-5 py-4 border-t border-[--border-subtle] bg-[--bg-subtle]">
+    <div className="px-5 py-4 border-t border-(--border-subtle) bg-(--bg-subtle)">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-[10px] uppercase tracking-widest text-[--text-muted] font-medium">
+        <span className="text-[10px] uppercase tracking-widest text-(--text-muted) font-medium">
           Top outcomes by probability
         </span>
-        <div className="flex items-center gap-3 text-[10px] text-[--text-muted]">
+        <div className="flex items-center gap-3 text-[10px] text-(--text-muted)">
           {hasPoly   && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#1652F0]/80" /> Poly</span>}
           {hasKalshi && <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#00B3A1]/80" /> Kalshi</span>}
         </div>
@@ -106,11 +106,11 @@ export function MultiOddsChart({
           const polyW     = polyYes   != null ? (polyYes   / leader) * 100 : 0;
           const kalshiW   = kalshiYes != null ? (kalshiYes / leader) * 100 : 0;
           return (
-            <div key={i} className="grid grid-cols-[minmax(80px,120px)_1fr_56px] items-center gap-2 group/row rounded-lg px-1 py-0.5 -mx-1 hover:bg-[--surface] transition-colors cursor-default">
-              <span className="chart-label text-[11px] text-[--text-secondary] truncate">{o.poly_label || o.kalshi_label}</span>
+            <div key={i} className="grid grid-cols-[minmax(80px,120px)_1fr_56px] items-center gap-2 group/row rounded-lg px-1 py-0.5 -mx-1 hover:bg-(--surface) transition-colors cursor-default">
+              <span className="chart-label text-[11px] text-(--text-secondary) truncate">{o.poly_label || o.kalshi_label}</span>
               <div className="flex flex-col gap-0.5">
                 {hasPoly && (
-                  <div className="relative h-3 rounded-full bg-[--surface-hover] group-hover/row:bg-[--border] transition-colors">
+                  <div className="relative h-3 rounded-full bg-(--surface-hover) group-hover/row:bg-(--border) transition-colors">
                     {polyYes != null && (
                       <div className="bar-fill bar-fill-poly absolute inset-y-0 left-0 rounded-full"
                         style={{ width: `${polyW}%`, minWidth: "8px", background: "#1652F0CC" }} />
@@ -118,7 +118,7 @@ export function MultiOddsChart({
                   </div>
                 )}
                 {hasKalshi && (
-                  <div className="relative h-3 rounded-full bg-[--surface-hover] group-hover/row:bg-[--border] transition-colors">
+                  <div className="relative h-3 rounded-full bg-(--surface-hover) group-hover/row:bg-(--border) transition-colors">
                     {kalshiYes != null && (
                       <div className="bar-fill bar-fill-kalshi absolute inset-y-0 left-0 rounded-full"
                         style={{ width: `${kalshiW}%`, minWidth: "8px", background: "#00B3A1CC" }} />
@@ -128,14 +128,14 @@ export function MultiOddsChart({
               </div>
               <div className="flex flex-col items-end gap-0.5">
                 {hasPoly   && <span className="chart-price chart-price-poly text-[10px] font-mono text-[#1652F0] dark:text-[#5b8df8]">{pct(polyYes)}</span>}
-                {hasKalshi && <span className="chart-price chart-price-kalshi text-[10px] font-mono text-[--kalshi-teal]">{pct(kalshiYes)}</span>}
+                {hasKalshi && <span className="chart-price chart-price-kalshi text-[10px] font-mono text-(--kalshi-teal)">{pct(kalshiYes)}</span>}
               </div>
             </div>
           );
         })}
       </div>
       {outcomes.length > maxOutcomes && (
-        <p className="text-[10px] text-[--text-muted] mt-3">
+        <p className="text-[10px] text-(--text-muted) mt-3">
           Showing top {maxOutcomes} of {outcomes.length} outcomes
         </p>
       )}

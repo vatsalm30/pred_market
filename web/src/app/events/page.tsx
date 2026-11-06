@@ -21,7 +21,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Sports:    "text-emerald-600 dark:text-emerald-400 bg-emerald-500/8 border-emerald-500/20",
   Economics: "text-amber-600  dark:text-amber-400  bg-amber-500/8  border-amber-500/20",
   Tech:      "text-violet-600 dark:text-violet-400 bg-violet-500/8 border-violet-500/20",
-  Other:     "text-[--text-muted] bg-[--bg-subtle] border-[--border]",
+  Other:     "text-(--text-muted) bg-(--bg-subtle) border-(--border)",
 };
 
 function fmtDate(d?: string | null): string {
@@ -66,21 +66,21 @@ function SinglePlatformOutcomes({
     const shown = expanded ? outcomes : outcomes.slice(0, PREVIEW);
     const rest  = outcomes.length - PREVIEW;
     return (
-      <div className="px-4 py-3 border-t border-[--border-subtle] bg-[--bg-subtle]">
+      <div className="px-4 py-3 border-t border-(--border-subtle) bg-(--bg-subtle)">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5 text-[10px] text-[--text-muted]">
+          <div className="flex items-center gap-1.5 text-[10px] text-(--text-muted)">
             <Logo size={11} />
             <span>{label}</span>
           </div>
-          <span className="text-[10px] uppercase tracking-widest text-[--text-muted] font-medium">Odds</span>
+          <span className="text-[10px] uppercase tracking-widest text-(--text-muted) font-medium">Odds</span>
         </div>
         <div className="space-y-2">
           {shown.map((o, i) => {
             const w = leader > 0 ? (o.price / leader) * 100 : 0;
             return (
               <div key={i} className="flex items-center gap-2">
-                <span className="text-[11px] text-[--text-secondary] truncate w-[45%] shrink-0">{o.label}</span>
-                <div className="flex-1 relative h-3.5 rounded-full bg-[--surface-hover]">
+                <span className="text-[11px] text-(--text-secondary) truncate w-[45%] shrink-0">{o.label}</span>
+                <div className="flex-1 relative h-3.5 rounded-full bg-(--surface-hover)">
                   <div
                     className="absolute inset-y-0 left-0 rounded-full"
                     style={{ width: `${w}%`, minWidth: "6px", background: color + "CC" }}
@@ -96,7 +96,7 @@ function SinglePlatformOutcomes({
         {outcomes.length > PREVIEW && (
           <button
             onClick={(e) => { e.preventDefault(); setExpanded(!expanded); }}
-            className="mt-2 text-[10px] text-[--text-muted] hover:text-[--text-primary] transition-colors flex items-center gap-0.5"
+            className="mt-2 text-[10px] text-(--text-muted) hover:text-(--text-primary) transition-colors flex items-center gap-0.5"
           >
             {expanded
               ? <><ChevronUp className="w-3 h-3" /> Show less</>
@@ -111,21 +111,21 @@ function SinglePlatformOutcomes({
   if (yesPrice == null) return null;
   const yesPct = yesPrice * 100;
   return (
-    <div className="px-4 py-4 border-t border-[--border-subtle] bg-[--bg-subtle]">
+    <div className="px-4 py-4 border-t border-(--border-subtle) bg-(--bg-subtle)">
       <div className="flex items-center gap-2 mb-1.5">
         <Logo size={12} />
-        <span className="text-[11px] text-[--text-secondary]">{label}</span>
+        <span className="text-[11px] text-(--text-secondary)">{label}</span>
         <span className="ml-auto font-mono text-xs font-semibold" style={{ color }}>
           {yesPct.toFixed(1)}% YES
         </span>
       </div>
-      <div className="relative h-4 rounded-full bg-[--surface-hover]">
+      <div className="relative h-4 rounded-full bg-(--surface-hover)">
         <div
           className="absolute inset-y-0 left-0 rounded-full"
           style={{ width: `${yesPct}%`, minWidth: "8px", background: color + "CC" }}
         />
         {(100 - yesPct) > 14 && (
-          <span className="absolute inset-y-0 right-0 flex items-center pr-1.5 text-[10px] text-[--text-muted]">
+          <span className="absolute inset-y-0 right-0 flex items-center pr-1.5 text-[10px] text-(--text-muted)">
             {(100 - yesPct).toFixed(1)}% NO
           </span>
         )}
@@ -142,7 +142,7 @@ function EventCard({ event, matched }: { event: AllEvent; matched: GroupedMarket
 
   return (
     <div className="market-card surface rounded-2xl overflow-hidden flex flex-col break-inside-avoid mb-4">
-      <div className="px-4 py-3.5 border-b border-[--border-subtle]">
+      <div className="px-4 py-3.5 border-b border-(--border-subtle)">
         <div className="flex items-start gap-3">
           <EventIcon src={event.icon || null} alt={event.title} size={40} className="shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
@@ -159,11 +159,11 @@ function EventCard({ event, matched }: { event: AllEvent; matched: GroupedMarket
                 </span>
               </div>
             </div>
-            <h3 className="text-[--text-primary] text-sm font-semibold leading-snug line-clamp-2">
+            <h3 className="text-(--text-primary) text-sm font-semibold leading-snug line-clamp-2">
               {event.title}
             </h3>
             {event.num_outcomes > 2 && (
-              <p className="text-[10px] text-[--text-muted] mt-0.5">{event.num_outcomes} outcomes</p>
+              <p className="text-[10px] text-(--text-muted) mt-0.5">{event.num_outcomes} outcomes</p>
             )}
           </div>
         </div>
@@ -180,13 +180,13 @@ function EventCard({ event, matched }: { event: AllEvent; matched: GroupedMarket
         )}
       </div>
 
-      <div className="px-4 py-2.5 flex items-center justify-between border-t border-[--border-subtle] bg-[--bg-subtle]">
-        <div className="flex items-center gap-2 text-[10px] text-[--text-muted] flex-wrap">
+      <div className="px-4 py-2.5 flex items-center justify-between border-t border-(--border-subtle) bg-(--bg-subtle)">
+        <div className="flex items-center gap-2 text-[10px] text-(--text-muted) flex-wrap">
           {event.volume > 0 && (
-            <span className="font-medium text-[--text-secondary]">{formatVolume(event.volume)}</span>
+            <span className="font-medium text-(--text-secondary)">{formatVolume(event.volume)}</span>
           )}
           {event.volume_24h > 0 && (
-            <span className="text-[--text-muted]">{formatVolume(event.volume_24h)}/24h</span>
+            <span className="text-(--text-muted)">{formatVolume(event.volume_24h)}/24h</span>
           )}
           {event.end_date && (
             <span className="flex items-center gap-1">
@@ -197,7 +197,7 @@ function EventCard({ event, matched }: { event: AllEvent; matched: GroupedMarket
         </div>
         <Link
           href={`/events/${encodeURIComponent(event.id)}`}
-          className="link-arrow text-[10px] text-[--text-secondary] hover:text-[--arb-amber] flex items-center gap-0.5 transition-colors shrink-0"
+          className="link-arrow text-[10px] text-(--text-secondary) hover:text-(--arb-amber) flex items-center gap-0.5 transition-colors shrink-0"
         >
           Details <ArrowRight className="w-2.5 h-2.5" />
         </Link>
@@ -225,30 +225,30 @@ function CompareCard({
   return (
     <div className="market-card surface rounded-2xl overflow-hidden break-inside-avoid mb-4">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-[--border-subtle]">
+      <div className="px-5 py-4 border-b border-(--border-subtle)">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 flex-1 min-w-0">
             <EventIcon src={group.event_icon} alt={group.poly_event} size={44} className="mt-0.5 shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                 <span className={`text-[10px] font-medium px-1.5 py-px rounded-full border ${catClass}`}>{category}</span>
-                <span className="text-[--text-muted] text-[10px]">{group.outcomes.length} outcome{group.outcomes.length !== 1 ? "s" : ""}</span>
+                <span className="text-(--text-muted) text-[10px]">{group.outcomes.length} outcome{group.outcomes.length !== 1 ? "s" : ""}</span>
               </div>
-              <h3 className="text-[--text-primary] font-semibold text-sm leading-snug">{group.poly_event}</h3>
+              <h3 className="text-(--text-primary) font-semibold text-sm leading-snug">{group.poly_event}</h3>
               {group.kalshi_event !== group.poly_event && (
-                <p className="text-[--text-muted] text-xs mt-0.5 truncate">Kalshi: {group.kalshi_event}</p>
+                <p className="text-(--text-muted) text-xs mt-0.5 truncate">Kalshi: {group.kalshi_event}</p>
               )}
               {(group.poly_end_date || group.kalshi_end_date) && (() => {
                 const diff = dateDiffDays(group.poly_end_date, group.kalshi_end_date);
                 const mismatch = diff !== null && diff > 30;
                 return (
-                  <div className="flex items-center gap-3 mt-1 text-[10px] text-[--text-muted]">
+                  <div className="flex items-center gap-3 mt-1 text-[10px] text-(--text-muted)">
                     <span className="flex items-center gap-1">
                       <span className="text-[#1652F0] dark:text-[#5b8df8]">Poly</span>
                       <span className="font-mono">{fmtDate(group.poly_end_date)}</span>
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="text-[--kalshi-teal]">Kalshi</span>
+                      <span className="text-(--kalshi-teal)">Kalshi</span>
                       <span className="font-mono">{fmtDate(group.kalshi_end_date)}</span>
                     </span>
                     {mismatch && (
@@ -285,15 +285,15 @@ function CompareCard({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[--border-subtle]">
-                <th className="text-left px-5 py-2.5 text-[--text-muted] font-medium text-xs w-full">Outcome</th>
+              <tr className="border-b border-(--border-subtle)">
+                <th className="text-left px-5 py-2.5 text-(--text-muted) font-medium text-xs w-full">Outcome</th>
                 <th className="text-right px-4 py-2.5 text-xs whitespace-nowrap">
-                  <span className="flex items-center justify-end gap-1 text-[--text-muted]"><PolymarketLogo size={11} /> YES</span>
+                  <span className="flex items-center justify-end gap-1 text-(--text-muted)"><PolymarketLogo size={11} /> YES</span>
                 </th>
                 <th className="text-right px-4 py-2.5 text-xs whitespace-nowrap">
-                  <span className="flex items-center justify-end gap-1 text-[--text-muted]"><KalshiLogo size={11} /> YES</span>
+                  <span className="flex items-center justify-end gap-1 text-(--text-muted)"><KalshiLogo size={11} /> YES</span>
                 </th>
-                <th className="text-right px-5 py-2.5 text-xs text-[--text-muted] hidden sm:table-cell whitespace-nowrap">Spread</th>
+                <th className="text-right px-5 py-2.5 text-xs text-(--text-muted) hidden sm:table-cell whitespace-nowrap">Spread</th>
               </tr>
             </thead>
             <tbody>
@@ -302,18 +302,18 @@ function CompareCard({
                 const kalshiYes = o.kalshi_yes_ask as number | undefined;
                 const spread    = polyYes != null && kalshiYes != null ? Math.abs(polyYes - kalshiYes) * 100 : null;
                 const spreadColor =
-                  spread == null  ? "text-[--text-muted]"
-                  : spread >= 3   ? "text-[--arb-amber] font-semibold"
+                  spread == null  ? "text-(--text-muted)"
+                  : spread >= 3   ? "text-(--arb-amber) font-semibold"
                   : spread >= 1   ? "text-emerald-500 dark:text-emerald-400"
-                  : "text-[--text-muted]";
+                  : "text-(--text-muted)";
                 return (
-                  <tr key={i} className="border-b border-[--border-subtle] last:border-0 hover:bg-[--surface-hover] transition-colors">
-                    <td className="px-5 py-2.5 text-[--text-secondary] text-sm">{o.poly_label}</td>
+                  <tr key={i} className="border-b border-(--border-subtle) last:border-0 hover:bg-(--surface-hover) transition-colors">
+                    <td className="px-5 py-2.5 text-(--text-secondary) text-sm">{o.poly_label}</td>
                     <td className="px-4 py-2.5 text-right">
                       <span className="text-[#1652F0] dark:text-[#5b8df8] font-mono text-xs font-medium">{pct(polyYes)}</span>
                     </td>
                     <td className="px-4 py-2.5 text-right">
-                      <span className="text-[--kalshi-teal] font-mono text-xs font-medium">{pct(kalshiYes)}</span>
+                      <span className="text-(--kalshi-teal) font-mono text-xs font-medium">{pct(kalshiYes)}</span>
                     </td>
                     <td className={`px-5 py-2.5 text-right font-mono text-xs hidden sm:table-cell ${spreadColor}`}>
                       {spread != null ? `${spread.toFixed(1)}%` : "—"}
@@ -330,10 +330,10 @@ function CompareCard({
       <OddsChart outcomes={group.outcomes} />
 
       {/* Footer */}
-      <div className="px-4 py-2.5 flex items-center justify-between border-t border-[--border-subtle] bg-[--bg-subtle]">
-        <div className="flex items-center gap-3 text-[10px] text-[--text-muted]">
+      <div className="px-4 py-2.5 flex items-center justify-between border-t border-(--border-subtle) bg-(--bg-subtle)">
+        <div className="flex items-center gap-3 text-[10px] text-(--text-muted)">
           {group.total_volume > 0 && (
-            <span className="font-medium text-[--text-secondary]">{formatVolume(group.total_volume)}</span>
+            <span className="font-medium text-(--text-secondary)">{formatVolume(group.total_volume)}</span>
           )}
           {event && event.volume_24h > 0 && (
             <span>{formatVolume(event.volume_24h)}/24h</span>
@@ -341,7 +341,7 @@ function CompareCard({
           {group.outcomes.length > 5 && (
             <button
               onClick={onToggle}
-              className="flex items-center gap-0.5 hover:text-[--text-primary] transition-colors"
+              className="flex items-center gap-0.5 hover:text-(--text-primary) transition-colors"
             >
               {expanded
                 ? <><ChevronUp className="w-3 h-3" /> Less</>
@@ -353,14 +353,14 @@ function CompareCard({
           {event && (
             <Link
               href={`/events/${encodeURIComponent(event.id)}`}
-              className="link-arrow text-[10px] text-[--text-secondary] hover:text-[--text-primary] flex items-center gap-0.5 transition-colors"
+              className="link-arrow text-[10px] text-(--text-secondary) hover:text-(--text-primary) flex items-center gap-0.5 transition-colors"
             >
               Details <ArrowRight className="w-2.5 h-2.5" />
             </Link>
           )}
           <Link
             href={`/arbitrage?event=${encodeURIComponent(group.poly_event)}`}
-            className="link-arrow text-[10px] text-[--arb-amber] flex items-center gap-0.5"
+            className="link-arrow text-[10px] text-(--arb-amber) flex items-center gap-0.5"
           >
             Arb <ArrowRight className="w-2.5 h-2.5" />
           </Link>
@@ -522,29 +522,29 @@ function AllEventsPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <div className="flex items-center gap-2 text-xs text-[--text-muted] mb-4 sm:mb-5">
-          <Link href="/" className="hover:text-[--text-primary] transition-colors">Home</Link>
+        <div className="flex items-center gap-2 text-xs text-(--text-muted) mb-4 sm:mb-5">
+          <Link href="/" className="hover:text-(--text-primary) transition-colors">Home</Link>
           <span>/</span>
           <span>All Markets</span>
         </div>
 
         <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
           <div>
-            <h1 className="text-2xl sm:text-4xl font-bold text-[--text-primary] leading-tight mb-1.5 sm:mb-2">
+            <h1 className="text-2xl sm:text-4xl font-bold text-(--text-primary) leading-tight mb-1.5 sm:mb-2">
               All Markets
             </h1>
-            <p className="text-[--text-secondary] text-sm">
+            <p className="text-(--text-secondary) text-sm">
               Every active prediction market on Polymarket and Kalshi.
             </p>
           </div>
           {/* View toggle */}
-          <div className="flex items-center gap-1 p-1 bg-[--surface] rounded-xl border border-[--border] shrink-0 self-start">
+          <div className="flex items-center gap-1 p-1 bg-(--surface) rounded-xl border border-(--border) shrink-0 self-start">
             <button
               onClick={() => setView("all")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 view === "all"
-                  ? "bg-[--bg] text-[--text-primary] shadow-sm border border-[--border-subtle]"
-                  : "text-[--text-muted] hover:text-[--text-primary]"
+                  ? "bg-(--bg) text-(--text-primary) shadow-sm border border-(--border-subtle)"
+                  : "text-(--text-muted) hover:text-(--text-primary)"
               }`}
             >
               <LayoutGrid className="w-3.5 h-3.5" /> All
@@ -553,8 +553,8 @@ function AllEventsPage() {
               onClick={() => setView("compare")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 view === "compare"
-                  ? "bg-[--bg] text-[--text-primary] shadow-sm border border-[--border-subtle]"
-                  : "text-[--text-muted] hover:text-[--text-primary]"
+                  ? "bg-(--bg) text-(--text-primary) shadow-sm border border-(--border-subtle)"
+                  : "text-(--text-muted) hover:text-(--text-primary)"
               }`}
             >
               <Rows3 className="w-3.5 h-3.5" /> Compare
@@ -562,29 +562,29 @@ function AllEventsPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3 sm:gap-5 text-sm text-[--text-secondary]">
-          <span><strong className="text-[--text-primary] font-semibold">{loading ? "—" : events.length.toLocaleString()}</strong> markets</span>
-          <span><strong className="text-[--text-primary] font-semibold">{loading ? "—" : formatVolume(totalVol)}</strong> total vol</span>
-          <span className="hidden sm:inline"><strong className="text-[--text-primary] font-semibold">{loading ? "—" : formatVolume(totalVol24h)}</strong> 24h vol</span>
-          <span><strong className="text-[--text-primary] font-semibold">{loading ? "—" : events.filter((e) => e.is_matched).length}</strong> cross-platform</span>
-          <span className="flex items-center gap-1.5 text-[--kalshi-teal] text-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-[--kalshi-teal] live-dot" />
+        <div className="flex flex-wrap gap-3 sm:gap-5 text-sm text-(--text-secondary)">
+          <span><strong className="text-(--text-primary) font-semibold">{loading ? "—" : events.length.toLocaleString()}</strong> markets</span>
+          <span><strong className="text-(--text-primary) font-semibold">{loading ? "—" : formatVolume(totalVol)}</strong> total vol</span>
+          <span className="hidden sm:inline"><strong className="text-(--text-primary) font-semibold">{loading ? "—" : formatVolume(totalVol24h)}</strong> 24h vol</span>
+          <span><strong className="text-(--text-primary) font-semibold">{loading ? "—" : events.filter((e) => e.is_matched).length}</strong> cross-platform</span>
+          <span className="flex items-center gap-1.5 text-(--kalshi-teal) text-xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-(--kalshi-teal) live-dot" />
             Live snapshot
           </span>
         </div>
       </div>
 
       {/* Sticky filters */}
-      <div className="sticky top-14 z-10 py-3 bg-[--bg]/90 backdrop-blur-xl -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-[--border-subtle] mb-6 space-y-2.5">
+      <div className="sticky top-14 z-10 py-3 bg-(--bg)/90 backdrop-blur-xl -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-(--border-subtle) mb-6 space-y-2.5">
         <div className="flex flex-col sm:flex-row gap-2.5">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--text-muted]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--text-muted)" />
             <input
               type="text"
               placeholder="Search markets..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg bg-[--surface] border border-[--border] text-[--text-primary] text-sm placeholder-[--text-muted] focus:outline-none focus:border-[--text-muted] transition-colors"
+              className="w-full pl-10 pr-4 py-2 rounded-lg bg-(--surface) border border-(--border) text-(--text-primary) text-sm placeholder-(--text-muted) focus:outline-none focus:border-(--text-muted) transition-colors"
             />
           </div>
           {view === "all" && (
@@ -597,8 +597,8 @@ function AllEventsPage() {
                     onClick={() => togglePlatform(key)}
                     className={`btn-pill flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       active
-                        ? "bg-[--surface] text-[--text-primary] border border-[--border]"
-                        : "text-[--text-muted] hover:text-[--text-primary] border border-transparent"
+                        ? "bg-(--surface) text-(--text-primary) border border-(--border)"
+                        : "text-(--text-muted) hover:text-(--text-primary) border border-transparent"
                     }`}
                   >
                     {icon}
@@ -612,15 +612,15 @@ function AllEventsPage() {
 
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
-            <Filter className="w-3.5 h-3.5 text-[--text-muted] shrink-0" />
+            <Filter className="w-3.5 h-3.5 text-(--text-muted) shrink-0" />
             {categories.map((c) => (
               <button
                 key={c}
                 onClick={() => setCategory(c)}
                 className={`btn-pill px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-xs font-medium ${
                   category === c
-                    ? "bg-[--surface] text-[--text-primary] border border-[--border]"
-                    : "text-[--text-muted] hover:text-[--text-primary]"
+                    ? "bg-(--surface) text-(--text-primary) border border-(--border)"
+                    : "text-(--text-muted) hover:text-(--text-primary)"
                 }`}
               >
                 {c}
@@ -628,15 +628,15 @@ function AllEventsPage() {
             ))}
           </div>
           <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
-            <span className="text-[--text-muted] text-xs hidden sm:inline">Sort:</span>
+            <span className="text-(--text-muted) text-xs hidden sm:inline">Sort:</span>
             {(["volume", "volume_24h", "date", "probability"] as const).map((s) => (
               <button
                 key={s}
                 onClick={() => setSortBy(s)}
                 className={`btn-pill px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-xs font-medium ${
                   sortBy === s
-                    ? "bg-[--surface] text-[--text-primary] border border-[--border]"
-                    : "text-[--text-muted] hover:text-[--text-primary]"
+                    ? "bg-(--surface) text-(--text-primary) border border-(--border)"
+                    : "text-(--text-muted) hover:text-(--text-primary)"
                 }`}
               >
                 {s === "volume" ? "Vol" : s === "volume_24h" ? "24h" : s === "date" ? "Date" : "Prob"}
@@ -647,11 +647,11 @@ function AllEventsPage() {
       </div>
 
       {!loading && (
-        <p className="text-[--text-muted] text-xs mb-5">
+        <p className="text-(--text-muted) text-xs mb-5">
           {Math.min(page * PAGE_SIZE, activeList.length)} of {activeList.length.toLocaleString()}{" "}
           {view === "compare" ? "matched events" : "markets"}
           {platforms.size > 0 && view === "all" && (
-            <button onClick={() => setPlatforms(new Set())} className="ml-2 text-[--text-secondary] hover:text-[--text-primary] underline underline-offset-2 transition-colors">
+            <button onClick={() => setPlatforms(new Set())} className="ml-2 text-(--text-secondary) hover:text-(--text-primary) underline underline-offset-2 transition-colors">
               clear filter
             </button>
           )}
@@ -665,7 +665,7 @@ function AllEventsPage() {
           ))}
         </div>
       ) : activeList.length === 0 ? (
-        <div className="text-center py-24 text-[--text-muted]">
+        <div className="text-center py-24 text-(--text-muted)">
           <TrendingUp className="w-10 h-10 mx-auto mb-3 opacity-20" />
           <p className="text-sm">No markets match your search.</p>
         </div>
@@ -685,7 +685,7 @@ function AllEventsPage() {
             <div className="flex justify-center mt-2">
               <button
                 onClick={() => setPage((p) => p + 1)}
-                className="btn-pill px-4 py-2 text-xs text-[--text-muted] hover:text-[--text-primary] border border-[--border] rounded-lg"
+                className="btn-pill px-4 py-2 text-xs text-(--text-muted) hover:text-(--text-primary) border border-(--border) rounded-lg"
               >
                 Load more ({activeList.length - page * PAGE_SIZE} remaining)
               </button>
@@ -710,7 +710,7 @@ function AllEventsPage() {
             <div className="flex justify-center mt-2">
               <button
                 onClick={() => setPage((p) => p + 1)}
-                className="btn-pill px-4 py-2 text-xs text-[--text-muted] hover:text-[--text-primary] border border-[--border] rounded-lg"
+                className="btn-pill px-4 py-2 text-xs text-(--text-muted) hover:text-(--text-primary) border border-(--border) rounded-lg"
               >
                 Load more ({activeList.length - page * PAGE_SIZE} remaining)
               </button>

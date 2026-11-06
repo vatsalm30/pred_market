@@ -13,6 +13,7 @@ const links = [
   { href: "/alerts",    label: "Alerts" },
   { href: "/news",      label: "News" },
   { href: "/blog",      label: "Blog" },
+  { href: "/developers", label: "API" },
 ];
 
 export default function Nav() {
@@ -36,13 +37,13 @@ export default function Nav() {
   }, [open]);
 
   return (
-    <header ref={menuRef} className="sticky top-0 z-50 border-b border-[--border-subtle] bg-[--bg]/90 backdrop-blur-xl">
+    <header ref={menuRef} className="sticky top-0 z-50 border-b border-(--border-subtle) bg-(--bg)/90 backdrop-blur-xl">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <Link href="/" className="nav-logo flex items-center gap-2 min-w-0">
             <OmnipredLogo size={22} />
-            <span className="font-bold text-base tracking-tight text-[--text-primary] whitespace-nowrap">OmniPred</span>
-            <span className="text-[--text-muted] font-normal text-xs hidden lg:inline truncate">— prediction market data</span>
+            <span className="font-bold text-base tracking-tight text-(--text-primary) whitespace-nowrap">OmniPred</span>
+            <span className="text-(--text-muted) font-normal text-xs hidden lg:inline truncate">— prediction market data</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
@@ -52,8 +53,8 @@ export default function Nav() {
                 href={l.href}
                 className={`nav-link px-3 py-1.5 rounded-lg text-sm ${
                   pathname.startsWith(l.href)
-                    ? "text-[--text-primary] bg-[--surface]"
-                    : "text-[--text-secondary] hover:text-[--text-primary] hover:bg-[--surface-hover]"
+                    ? "text-(--text-primary) bg-(--surface)"
+                    : "text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--surface-hover)"
                 }`}
               >
                 {l.label}
@@ -62,14 +63,14 @@ export default function Nav() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-1.5 text-xs text-[--kalshi-teal] pr-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[--kalshi-teal] live-dot" />
+            <div className="hidden md:flex items-center gap-1.5 text-xs text-(--kalshi-teal) pr-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-(--kalshi-teal) live-dot" />
               Live
             </div>
             <ThemeToggle />
             <button
               onClick={() => setOpen(!open)}
-              className="btn-icon md:hidden text-[--text-secondary] hover:text-[--text-primary] p-1.5"
+              className="btn-icon md:hidden text-(--text-secondary) hover:text-(--text-primary) p-1.5"
               aria-label="Toggle menu"
             >
               {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -79,7 +80,7 @@ export default function Nav() {
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-[--border-subtle] bg-[--bg] px-4 py-3 space-y-1">
+        <div className="md:hidden border-t border-(--border-subtle) bg-(--bg) px-4 py-3 space-y-1">
           {links.map((l) => (
             <Link
               key={l.href}
@@ -87,15 +88,15 @@ export default function Nav() {
               onClick={() => setOpen(false)}
               className={`flex items-center px-3 py-2.5 rounded-lg text-sm transition-colors ${
                 pathname.startsWith(l.href)
-                  ? "text-[--text-primary] bg-[--surface]"
-                  : "text-[--text-secondary] hover:text-[--text-primary] hover:bg-[--surface-hover]"
+                  ? "text-(--text-primary) bg-(--surface)"
+                  : "text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--surface-hover)"
               }`}
             >
               {l.label}
             </Link>
           ))}
-          <div className="flex items-center gap-1.5 px-3 py-2 text-xs text-[--kalshi-teal]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[--kalshi-teal] live-dot" />
+          <div className="flex items-center gap-1.5 px-3 py-2 text-xs text-(--kalshi-teal)">
+            <span className="w-1.5 h-1.5 rounded-full bg-(--kalshi-teal) live-dot" />
             Live prices
           </div>
         </div>

@@ -65,21 +65,21 @@ export default async function BlogPostPage({ params }: Props) {
       {/* Back */}
       <Link
         href="/blog"
-        className="inline-flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-[--text-secondary] mb-8 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-(--text-muted) hover:text-(--text-secondary) mb-8 transition-colors"
       >
         ← Market Movements
       </Link>
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[--text-primary] leading-snug">{post.title}</h1>
+        <h1 className="text-2xl font-bold text-(--text-primary) leading-snug">{post.title}</h1>
         <div className="flex items-center gap-3 mt-3">
-          <span className="text-[--text-muted] text-sm">{fmtDate(post.date)}</span>
+          <span className="text-(--text-muted) text-sm">{fmtDate(post.date)}</span>
           <div className="flex gap-1.5 flex-wrap">
             {post.tags.map((tag) => (
               <span
                 key={tag}
-                className="text-xs px-2 py-0.5 rounded-full bg-[--kalshi-teal]/10 text-[--kalshi-teal]"
+                className="text-xs px-2 py-0.5 rounded-full bg-(--kalshi-teal)/10 text-(--kalshi-teal)"
               >
                 {tag}
               </span>
@@ -95,19 +95,19 @@ export default async function BlogPostPage({ params }: Props) {
           src={post.ogImage}
           alt=""
           referrerPolicy="no-referrer"
-          className="w-full h-56 object-cover rounded-xl mb-8 bg-[--surface]"
+          className="w-full h-56 object-cover rounded-xl mb-8 bg-(--surface)"
         />
       )}
 
       {/* Body */}
-      <p className="text-[--text-secondary] leading-relaxed mb-8">{post.body}</p>
+      <p className="text-(--text-secondary) leading-relaxed mb-8">{post.body}</p>
 
       {/* Table */}
       {post.table.length > 0 && (
         <div className="mb-8 overflow-x-auto">
-          <table className="w-full text-sm border border-[--border-subtle] rounded-xl overflow-hidden">
+          <table className="w-full text-sm border border-(--border-subtle) rounded-xl overflow-hidden">
             <thead>
-              <tr className="bg-[--surface] text-[--text-muted] text-xs uppercase tracking-wide">
+              <tr className="bg-(--surface) text-(--text-muted) text-xs uppercase tracking-wide">
                 <th className="text-left px-4 py-3 font-medium">Market</th>
                 <th className="text-right px-4 py-3 font-medium">Poly</th>
                 <th className="text-right px-4 py-3 font-medium">Kalshi</th>
@@ -119,23 +119,23 @@ export default async function BlogPostPage({ params }: Props) {
               {post.table.map((row, i) => (
                 <tr
                   key={i}
-                  className={`border-t border-[--border-subtle] ${
-                    i % 2 === 1 ? "bg-[--bg-subtle]" : "bg-[--bg]"
+                  className={`border-t border-(--border-subtle) ${
+                    i % 2 === 1 ? "bg-(--bg-subtle)" : "bg-(--bg)"
                   }`}
                 >
-                  <td className="px-4 py-3 text-[--text-primary] max-w-[240px] truncate">
+                  <td className="px-4 py-3 text-(--text-primary) max-w-[240px] truncate">
                     {row.market}
                   </td>
-                  <td className="px-4 py-3 text-right text-[--poly-blue] font-mono">
+                  <td className="px-4 py-3 text-right text-(--poly-blue) font-mono">
                     {row.polyPrice}
                   </td>
-                  <td className="px-4 py-3 text-right text-[--kalshi-teal] font-mono">
+                  <td className="px-4 py-3 text-right text-(--kalshi-teal) font-mono">
                     {row.kalshiPrice}
                   </td>
-                  <td className="px-4 py-3 text-right text-[--arb-amber] font-mono font-medium">
+                  <td className="px-4 py-3 text-right text-(--arb-amber) font-mono font-medium">
                     {row.gapPct}
                   </td>
-                  <td className="px-4 py-3 text-right text-[--text-primary] font-mono">
+                  <td className="px-4 py-3 text-right text-(--text-primary) font-mono">
                     {row.net500}
                   </td>
                 </tr>
@@ -146,8 +146,8 @@ export default async function BlogPostPage({ params }: Props) {
       )}
 
       {/* CTA */}
-      <div className="border-t border-[--border-subtle] pt-8">
-        <p className="text-[--text-secondary] text-sm mb-4">
+      <div className="border-t border-(--border-subtle) pt-8">
+        <p className="text-(--text-secondary) text-sm mb-4">
           These gaps update in real time. See all current opportunities in the live scanner.
         </p>
         <Link

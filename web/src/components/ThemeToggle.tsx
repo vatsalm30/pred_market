@@ -31,7 +31,7 @@ export default function ThemeToggle() {
     <button
       onClick={toggle}
       aria-label="Toggle theme"
-      className="btn-icon w-8 h-8 rounded-lg flex items-center justify-center text-[--text-secondary] hover:text-[--text-primary] hover:bg-[--surface-hover]"
+      className="btn-icon w-8 h-8 rounded-lg flex items-center justify-center text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--surface-hover)"
     >
       {/* CSS-driven: no JS state = no hydration flash */}
       <Sun className="w-4 h-4 hidden dark:block" />
