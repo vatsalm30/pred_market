@@ -12,4 +12,5 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
 EXPOSE 8080
-CMD ["node", "dist/index.js"]
+# Cap the heap well under the 256MB machine so GC runs before the VM runs out of memory
+CMD ["node", "--max-old-space-size=128", "--max-semi-space-size=4", "dist/index.js"]

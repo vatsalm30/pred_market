@@ -44,10 +44,16 @@ async function init() {
   };
 
   const auth = new Auth({ staticKeys: API_KEYS, verifyUrl: STREAM_VERIFY_URL, verifySecret: STREAM_VERIFY_SECRET });
-  startServer({ port: PORT, auth }, engine, kalshi, poly);
+  startServer(
+    { port: PORT, auth, usageUrl: STREAM_VERIFY_URL.replace(/\/verify$/, "/usage"), usageSecret: STREAM_VERIFY_SECRET }, engine, kalshi, poly);
   console.log(`${API_KEYS.size} static API keys; subscriber keys ${STREAM_VERIFY_URL ? `via ${STREAM_VERIFY_URL}` : "disabled"}`);
   await refresh();
   setInterval(refresh, REFRESH_MS);
 }
+
+// Last line of defence: log and keep serving rather than dropping every client.
+// Errors should still be handled where they happen; this only catches what slips through.
+process.on("uncaughtException", (err) => console.error("uncaught exception:", err));
+process.on("unhandledRejection", (err) => console.error("unhandled rejection:", err));
 
 init().catch(console.error);

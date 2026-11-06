@@ -1,8 +1,10 @@
 export type Tier = "free" | "quotes" | "pro";
 
 export interface Principal {
-  label: string; // identifies the subscriber for limits and logs
+  label: string; // identifies the subscriber (account) for limits, logs and usage
   tier: Tier;
+  fromSite: boolean;           // false for static env keys, whose usage isn't reported
+  realtimeUsedToday?: number;  // as recorded by the website, to survive our restarts
 }
 
 export interface AuthOptions {
@@ -23,7 +25,7 @@ export class Auth {
   async check(key: string | null): Promise<Principal | null> {
     if (!key) return null;
     const label = this.opts.staticKeys.get(key);
-    if (label) return { label, tier: "pro" };
+    if (label) return { label, tier: "pro", fromSite: false };
 
     const cached = this.cache.get(key);
     if (cached && cached.expires > Date.now()) return cached.principal;
@@ -39,8 +41,15 @@ export class Auth {
         // Verification is down: keep serving a key we already knew rather than cutting off subscribers.
         return cached?.principal ?? null;
       }
-      const body = (await res.json()) as { active: boolean; tier?: Tier; label?: string };
-      if (body.active && body.tier) principal = { label: body.label ?? key.slice(0, 12), tier: body.tier };
+      const body = (await res.json()) as { active: boolean; tier?: Tier; label?: string; realtime_used_today?: number };
+      if (body.active && body.tier) {
+        principal = {
+          label: body.label ?? key.slice(0, 12),
+          tier: body.tier,
+          fromSite: true,
+          realtimeUsedToday: body.realtime_used_today ?? 0,
+        };
+      }
     } catch {
       return cached?.principal ?? null;
     }

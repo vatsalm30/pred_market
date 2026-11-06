@@ -71,6 +71,12 @@ export class RealtimeBudget {
     return this.used.get(label) ?? 0;
   }
 
+  /** Take the larger of our count and the website's, e.g. after a restart. */
+  seed(label: string, seconds: number) {
+    this.roll();
+    if (seconds > (this.used.get(label) ?? 0)) this.used.set(label, seconds);
+  }
+
   add(label: string, seconds: number) {
     this.roll();
     this.used.set(label, (this.used.get(label) ?? 0) + seconds);
@@ -83,14 +89,22 @@ export class RealtimeBudget {
   }
 }
 
-/** Fixed-window counter: allow(key) is false once `limit` hits in the current window. */
+/**
+ * Fixed-window counter: allow(key) is false once `limit` hits in the current window.
+ * Holds at most `maxKeys` windows so a flood from many IPs can't exhaust memory; past
+ * that it drops expired windows, then everything (briefly under-limiting beats crashing).
+ */
 export class WindowLimiter {
   private counts = new Map<string, { start: number; n: number }>();
 
-  constructor(private windowMs: number) {}
+  constructor(private windowMs: number, private maxKeys = 50_000) {}
 
   allow(key: string, limit: number): { ok: boolean; remaining: number; resetMs: number } {
     const now = Date.now();
+    if (this.counts.size >= this.maxKeys && !this.counts.has(key)) {
+      this.sweep();
+      if (this.counts.size >= this.maxKeys) this.counts.clear();
+    }
     let w = this.counts.get(key);
     if (!w || now - w.start >= this.windowMs) {
       w = { start: now, n: 0 };

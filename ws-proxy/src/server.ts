@@ -1,15 +1,19 @@
 import http from "node:http";
+import zlib from "node:zlib";
 import WebSocket, { WebSocketServer } from "ws";
 import type { Engine } from "./engine";
 import type { KalshiFeed } from "./kalshi";
 import type { PolymarketFeed } from "./polymarket";
 import type { Arb, Pair } from "./types";
-import type { Auth, Tier } from "./auth";
+import type { Auth, Principal, Tier } from "./auth";
+import { UsageReporter, type LiveState } from "./usage";
 import { LIMITS, MAX_FREE_CONNECTIONS_PER_IP, RealtimeBudget, WindowLimiter, type TierLimits } from "./limits";
 
 export interface ServerOptions {
   port: number;
   auth: Auth;
+  usageUrl: string;    // the website's /api/stream/usage endpoint
+  usageSecret: string;
 }
 
 interface ArbFilter {
@@ -24,6 +28,7 @@ interface Client {
   key: string;
   label: string;
   tier: Tier;
+  fromSite: boolean;
   ip: string;
   quotes: Set<string> | "all" | null;
   arbs: ArbFilter | null;
@@ -37,6 +42,8 @@ interface Client {
 
 const MAX_BUFFERED = 8 * 1024 * 1024; // drop clients that can't keep up instead of buffering forever
 const UPGRADES_PER_IP_PER_MIN = 20;
+// Flood guard per IP, set well above any plan's REST limit so the per-account limit is what users hit.
+const REST_PER_IP_PER_MIN = 300;
 
 /** Static keys from env, "label:key,label2:key2". */
 export function parseApiKeys(raw: string): Map<string, string> {
@@ -99,13 +106,27 @@ export function startServer(opts: ServerOptions, engine: Engine, kalshi: KalshiF
   const upgradeLimiter = new WindowLimiter(60_000);
   let nextId = 1;
 
-  const send = (c: Client, data: object) => {
+  const liveByLabel = () => {
+    const live = new Map<string, LiveState>();
+    for (const c of clients) {
+      const cur = live.get(c.label);
+      live.set(c.label, {
+        connections: (cur?.connections ?? 0) + 1,
+        mode: cur?.mode === "realtime" || c.realtime ? "realtime" : "digest",
+      });
+    }
+    return live;
+  };
+  const usage = new UsageReporter(opts.usageUrl, opts.usageSecret, liveByLabel);
+
+  const send = (c: Client, data: { type: string; [k: string]: unknown }) => {
     if (c.ws.readyState !== WebSocket.OPEN) return;
     if (c.ws.bufferedAmount > MAX_BUFFERED) {
       c.ws.close(1013, "slow consumer");
       return;
     }
     c.ws.send(JSON.stringify(data));
+    if (data.type === "quote" || data.type === "arb") usage.bump(c.label, "updates", 1);
   };
 
   const quoteMsg = (pairId: string) => ({ type: "quote", pair_id: pairId, ...engine.quotes(pairId), ts: Date.now() });
@@ -133,7 +154,7 @@ export function startServer(opts: ServerOptions, engine: Engine, kalshi: KalshiF
 
   // ── Fan-out ────────────────────────────────────────────────────────────────
   engine.on("pair", (pairId: string) => {
-    let msg: object | null = null;
+    let msg: { type: string; [k: string]: unknown } | null = null;
     for (const c of clients) {
       if (!(c.quotes === "all" || c.quotes?.has(pairId))) continue;
       if (c.realtime) send(c, (msg ??= quoteMsg(pairId)));
@@ -173,6 +194,7 @@ export function startServer(opts: ServerOptions, engine: Engine, kalshi: KalshiF
       if (c.realtime && Number.isFinite(limits.realtimeSecondsPerDay) && (c.quotes || c.arbs)) {
         if (!charged.has(c.label)) {
           budget.add(c.label, 1);
+          usage.bump(c.label, "realtime_s", 1);
           charged.add(c.label);
         }
         if (realtimeRemaining(c) <= 0) {
@@ -203,6 +225,7 @@ export function startServer(opts: ServerOptions, engine: Engine, kalshi: KalshiF
   // ── Client protocol ──────────────────────────────────────────────────────
   function onClientMessage(c: Client, raw: string) {
     const limits = LIMITS[c.tier];
+    usage.bump(c.label, "messages", 1);
     if (!opsLimiter.allow(String(c.id), limits.opsPer10s).ok) {
       send(c, { type: "error", error: `rate limited: max ${limits.opsPer10s} messages per 10s` });
       return c.ws.close(1008, "rate limited");
@@ -212,6 +235,12 @@ export function startServer(opts: ServerOptions, engine: Engine, kalshi: KalshiF
       m = JSON.parse(raw);
     } catch {
       return send(c, { type: "error", error: "invalid JSON" });
+    }
+    if (!m || typeof m !== "object" || Array.isArray(m)) {
+      return send(c, { type: "error", error: "messages must be JSON objects like {\"op\":\"ping\"}" });
+    }
+    if (m.pairs !== undefined && !(Array.isArray(m.pairs) && m.pairs.length <= 1000 && m.pairs.every((p: unknown) => typeof p === "string"))) {
+      return send(c, { type: "error", error: "pairs must be an array of pair_id strings" });
     }
     if (m.op === "ping") return send(c, { type: "pong", id: m.id, ts: Date.now() });
     if (m.op === "usage") {
@@ -246,11 +275,15 @@ export function startServer(opts: ServerOptions, engine: Engine, kalshi: KalshiF
     }
     if (m.op === "subscribe" && m.channel === "arbs") {
       if (limits.maxArbSnapshot === 0) return send(c, { type: "error", error: "your plan does not include arbs" });
-      c.arbs = {
+      const filter = {
         minProfitPct: Number(m.min_profit_pct ?? 0),
         minOutcomeScore: Number(m.min_outcome_score ?? 0),
         minEventScore: Number(m.min_event_score ?? 0),
       };
+      if (!Object.values(filter).every(Number.isFinite)) {
+        return send(c, { type: "error", error: "min_profit_pct, min_outcome_score and min_event_score must be numbers" });
+      }
+      c.arbs = filter;
       return send(c, { type: "snapshot", channel: "arbs", data: topArbs(c.arbs, limits.maxArbSnapshot) });
     }
     if (m.op === "unsubscribe" && m.channel === "quotes") {
@@ -266,6 +299,22 @@ export function startServer(opts: ServerOptions, engine: Engine, kalshi: KalshiF
   }
 
   // ── REST ─────────────────────────────────────────────────────────────────
+  // The pairs list is ~400KB and only changes when the matched markets reload,
+  // so encode (and gzip) it once per reload instead of on every request.
+  let pairsCache: { for: Map<string, Pair>; raw: Buffer; gzip: Buffer } | null = null;
+  const pairsBody = () => {
+    if (pairsCache?.for !== engine.pairs) {
+      const raw = Buffer.from(JSON.stringify([...engine.pairs.values()].map((p) => ({
+        pair_id: p.pair_id,
+        kalshi_ticker: p.kalshi_ticker,
+        poly_market_id: p.poly_market_id,
+        ...pairMeta(p),
+      }))));
+      pairsCache = { for: engine.pairs, raw, gzip: zlib.gzipSync(raw) };
+    }
+    return pairsCache;
+  };
+
   const json = (res: http.ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}) => {
     res.writeHead(status, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", ...headers });
     res.end(JSON.stringify(body));
@@ -283,6 +332,9 @@ export function startServer(opts: ServerOptions, engine: Engine, kalshi: KalshiF
         website_clients: legacy.size,
         kalshi_connected: kalshi.connected,
         polymarket_sockets: `${poly.connectedShards}/${poly.shardCount}`,
+        memory_mb: Object.fromEntries(
+          Object.entries(process.memoryUsage()).map(([k, v]) => [k, Math.round(v / 1048576)])
+        ),
       });
     }
     if (req.method === "OPTIONS") {
@@ -294,11 +346,14 @@ export function startServer(opts: ServerOptions, engine: Engine, kalshi: KalshiF
     }
     if (!url.pathname.startsWith("/v1/")) return json(res, 404, { error: "not found" });
 
-    if (!upgradeLimiter.allow(`rest:${clientIp(req)}`, UPGRADES_PER_IP_PER_MIN * 3).ok) {
-      return json(res, 429, { error: "too many requests from this IP" });
+    const ipRate = upgradeLimiter.allow(`rest:${clientIp(req)}`, REST_PER_IP_PER_MIN);
+    if (!ipRate.ok) {
+      return json(res, 429, { error: "too many requests from this IP" }, { "Retry-After": String(Math.ceil(ipRate.resetMs / 1000)) });
     }
-    const principal = await opts.auth.check(requestKey(req, url));
+    const key = requestKey(req, url);
+    const principal = await opts.auth.check(key);
     if (!principal) return json(res, 401, { error: "missing, invalid or inactive API key" });
+    usage.restRequest(principal.label, key!, principal.fromSite);
     const limits = LIMITS[principal.tier];
     const rate = restLimiter.allow(principal.label, limits.restPerHour);
     const rateHeaders = {
@@ -306,15 +361,21 @@ export function startServer(opts: ServerOptions, engine: Engine, kalshi: KalshiF
       "X-RateLimit-Remaining": String(rate.remaining),
       "X-RateLimit-Reset": String(Math.ceil(rate.resetMs / 1000)),
     };
-    if (!rate.ok) return json(res, 429, { error: `rate limited: ${limits.restPerHour} requests per hour` }, rateHeaders);
+    if (!rate.ok) {
+      return json(res, 429, { error: `rate limited: ${limits.restPerHour} requests per hour` }, { ...rateHeaders, "Retry-After": rateHeaders["X-RateLimit-Reset"] });
+    }
 
     if (url.pathname === "/v1/pairs") {
-      return json(res, 200, [...engine.pairs.values()].map((p) => ({
-        pair_id: p.pair_id,
-        kalshi_ticker: p.kalshi_ticker,
-        poly_market_id: p.poly_market_id,
-        ...pairMeta(p),
-      })), rateHeaders);
+      const body = pairsBody();
+      const gzip = /\bgzip\b/.test(String(req.headers["accept-encoding"] ?? ""));
+      res.writeHead(200, {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Vary: "Accept-Encoding",
+        ...(gzip ? { "Content-Encoding": "gzip" } : {}),
+        ...rateHeaders,
+      });
+      return res.end(gzip ? body.gzip : body.raw);
     }
     if (url.pathname === "/v1/arbs") {
       if (limits.maxArbSnapshot === 0) return json(res, 403, { error: "your plan does not include arbs" }, rateHeaders);
@@ -351,6 +412,8 @@ export function startServer(opts: ServerOptions, engine: Engine, kalshi: KalshiF
     if (url.pathname === "/") {
       return wss.handleUpgrade(req, socket, head, (ws) => {
         legacy.add(ws);
+        // Without an error listener, a bad frame from any client crashes the whole process.
+        ws.on("error", () => ws.terminate());
         for (const ticker of engine.kalshiTickers()) {
           const q = kalshi.quote(ticker);
           if (q) ws.send(JSON.stringify({ type: "kalshi_price", market_ticker: ticker, yes_ask: q.yes_ask, no_ask: q.no_ask, ts: q.recv_ts }));
@@ -375,13 +438,16 @@ export function startServer(opts: ServerOptions, engine: Engine, kalshi: KalshiF
         const fromIp = [...clients].filter((c) => c.tier === "free" && c.ip === ip).length;
         if (fromIp >= MAX_FREE_CONNECTIONS_PER_IP) return reject(429, "Too Many Connections");
       }
-      wss.handleUpgrade(req, socket, head, (ws) => accept(ws, key!, label, tier, ip));
+      wss.handleUpgrade(req, socket, head, (ws) => accept(ws, key!, principal, ip));
     });
   });
 
-  function accept(ws: WebSocket, key: string, label: string, tier: Tier, ip: string) {
+  function accept(ws: WebSocket, key: string, principal: Principal, ip: string) {
+    const { label, tier, fromSite } = principal;
+    budget.seed(label, principal.realtimeUsedToday ?? 0);
+    usage.track(label, key, fromSite);
     const c: Client = {
-      id: nextId++, ws, key, label, tier, ip,
+      id: nextId++, ws, key, label, tier, fromSite, ip,
       quotes: null, arbs: null, alive: true,
       realtime: true, pendingPairs: new Set(), pendingArbs: new Map(), nextDigest: 0,
     };
@@ -400,6 +466,12 @@ export function startServer(opts: ServerOptions, engine: Engine, kalshi: KalshiF
     });
     ws.on("message", (raw) => onClientMessage(c, raw.toString()));
     ws.on("pong", () => (c.alive = true));
+    // Oversized or malformed frames and socket resets surface here; without a listener
+    // Node treats them as fatal and every client loses the stream.
+    ws.on("error", (err) => {
+      console.warn(`client error (${label}): ${err.message}`);
+      ws.terminate();
+    });
     ws.on("close", () => {
       clients.delete(c);
       console.log(`client disconnected (${label}), total ${clients.size}`);
