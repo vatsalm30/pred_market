@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { revealKey, rotateKey, getKey } from "@/lib/apikeys";
+import { revealKey } from "@/lib/apikeys";
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +21,4 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const created = session.created * 1000;
   if (subId && Date.now() - created < 10 * 60_000) return NextResponse.json({ status: "pending" });
   return NextResponse.json({ status: "revealed" });
-}
-
-// POST { api_key } — swap a key for a new one (e.g. if it leaked).
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  const body = await req.json().catch(() => null);
-  const apiKey = typeof body?.api_key === "string" ? body.api_key.trim() : "";
-  if (!apiKey || !(await getKey(apiKey))) return NextResponse.json({ error: "unknown API key" }, { status: 404 });
-  const key = await rotateKey(apiKey);
-  return NextResponse.json({ key });
 }

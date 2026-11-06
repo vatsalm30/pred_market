@@ -44,10 +44,11 @@ export default function TermsPage() {
         may be interrupted, changed or discontinued at any time without notice.
       </p>
 
-      <H2>5. Data Stream API</H2>
+      <H2>5. Accounts and the Data Stream API</H2>
       <ul className="list-disc pl-5 space-y-2">
+        <li>You can sign in with Google or GitHub. One account per person; keep your sign-in secure. You can delete your account at any time from the dashboard.</li>
         <li>The API is currently a free beta with the limits shown on the <Link href="/developers" className="text-(--kalshi-teal) hover:underline">developers page</Link>. We may change limits, introduce paid plans or end the beta; we will give API key holders notice by email where we reasonably can.</li>
-        <li>Keep your key secret. You are responsible for activity under it. One key per person; don&apos;t create multiple keys to get around limits.</li>
+        <li>Keep your keys secret. You are responsible for activity under them. Limits apply per account; don&apos;t create multiple accounts to get around them.</li>
         <li>Don&apos;t resell, redistribute or publicly republish the raw feed, or build a competing data service from it, without our written permission. You may use it in your own trading tools and show derived results to your users.</li>
         <li>Don&apos;t attempt to bypass rate limits, overload the service, probe it for vulnerabilities or access it other than through the documented interfaces.</li>
         <li>We may suspend or revoke keys that break these terms or put the Service at risk.</li>

@@ -19,15 +19,21 @@ export default function PrivacyPage() {
       <H2>What we collect</H2>
       <ul className="list-disc pl-5 space-y-2">
         <li>
-          <strong className="text-(--text-primary)">Browsing the site.</strong> No account and no cookies. Our host (Vercel) processes
+          <strong className="text-(--text-primary)">Browsing the site.</strong> No account needed and no tracking cookies. Our host (Vercel) processes
           your IP address and browser details to serve pages and keeps standard server logs. We use Vercel Web Analytics,
           which counts page views without cookies and without storing your IP address or building a profile of you.
         </li>
         <li>
-          <strong className="text-(--text-primary)">Data Stream API keys.</strong> Your email address, the tier of your key, and a
-          one-way hash of the key (we cannot recover the key itself). To limit abuse we count signups per network using a
-          one-way hash of your IP address, kept for two days. When you use the API, our stream server (Fly.io) sees your IP
-          address to enforce rate and connection limits; we keep usage counters in memory only.
+          <strong className="text-(--text-primary)">Your account.</strong> If you sign in with Google or GitHub, we receive your
+          name, verified email address, profile picture and that provider&apos;s ID for your account. We never see your
+          password. A session cookie keeps you signed in (see the{" "}
+          <Link href="/cookies" className="text-(--kalshi-teal) hover:underline">Cookie Policy</Link>).
+        </li>
+        <li>
+          <strong className="text-(--text-primary)">API keys and usage.</strong> The names you give your keys, when they were
+          created and last used, and a one-way hash of each key (we cannot recover the key itself). When you use the API, our
+          stream server (Fly.io) sees your IP address to enforce connection and rate limits, and records daily usage totals
+          for your account — streaming minutes, messages, REST requests and connections — which you can see in your dashboard.
         </li>
         <li>
           <strong className="text-(--text-primary)">Telegram alerts.</strong> When you start the bot we store your Telegram chat ID,
@@ -57,7 +63,8 @@ export default function PrivacyPage() {
       <H2>Who processes it for us</H2>
       <ul className="list-disc pl-5 space-y-2">
         <li>Vercel Inc. — website hosting and cookieless analytics (USA).</li>
-        <li>Amazon Web Services — database storing API keys and Telegram subscriptions (USA, us-east-1).</li>
+        <li>Google and GitHub — only if you choose to sign in with them, under their own privacy policies.</li>
+        <li>Amazon Web Services — database storing accounts, API keys, usage and Telegram subscriptions (USA, us-east-1).</li>
         <li>Fly.io — hosting for the Data Stream server (USA).</li>
         <li>Google Cloud — our market data pipeline, which processes no personal data.</li>
         <li>Telegram — delivers bot messages under its own privacy policy.</li>
@@ -70,8 +77,8 @@ export default function PrivacyPage() {
 
       <H2>How long we keep it</H2>
       <ul className="list-disc pl-5 space-y-2">
-        <li>API key and email: until you ask us to delete them, or until the API beta ends.</li>
-        <li>Signup IP hashes: 2 days.</li>
+        <li>Account and API keys: until you delete your account (you can do this yourself in the dashboard) or ask us to.</li>
+        <li>Daily usage totals: 90 days.</li>
         <li>Telegram chat ID and username: until you send <code>/stop</code> or ask us to delete them.</li>
         <li>Server logs: kept by our hosting providers for their standard retention periods (typically days to weeks).</li>
       </ul>
@@ -79,8 +86,9 @@ export default function PrivacyPage() {
       <H2>Your rights</H2>
       <p>
         Depending on where you live (including under the GDPR, UK GDPR and California&apos;s CCPA/CPRA), you can ask to access,
-        correct, delete or export your personal data, object to or restrict how we use it, and withdraw consent. Email <Mail />{" "}
-        from the address you signed up with and we will respond within 30 days. We will not treat you differently for using
+        correct, delete or export your personal data, object to or restrict how we use it, and withdraw consent. You can delete
+        your account at any time from the dashboard; for anything else email <Mail /> from the address you signed in with and
+        we will respond within 30 days. We will not treat you differently for using
         these rights. You can also complain to your local data protection authority.
       </p>
 

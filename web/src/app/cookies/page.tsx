@@ -11,11 +11,38 @@ export default function CookiesPage() {
   return (
     <LegalPage title="Cookie Policy">
       <p>
-        <strong className="text-(--text-primary)">OmniPred does not set any cookies</strong>, and we do not use advertising or
-        cross-site tracking technologies. That is why you don&apos;t see a cookie banner.
+        <strong className="text-(--text-primary)">OmniPred only sets cookies when you sign in</strong>, and only the ones needed to
+        keep you signed in. We do not use advertising, analytics or cross-site tracking cookies. That is why you don&apos;t see a
+        cookie banner.
       </p>
 
-      <H2>What we store in your browser</H2>
+      <H2>Cookies</H2>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="text-left text-(--text-primary)">
+              <th className="py-2 pr-4 border-b border-(--border)">Name</th>
+              <th className="py-2 pr-4 border-b border-(--border)">Purpose</th>
+              <th className="py-2 border-b border-(--border)">Expires</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="py-2 pr-4 border-b border-(--border-subtle) font-mono">op_session</td>
+              <td className="py-2 pr-4 border-b border-(--border-subtle)">Keeps you signed in to your account (set only after you sign in)</td>
+              <td className="py-2 border-b border-(--border-subtle)">30 days, or when you sign out</td>
+            </tr>
+            <tr>
+              <td className="py-2 pr-4 border-b border-(--border-subtle) font-mono">op_oauth</td>
+              <td className="py-2 pr-4 border-b border-(--border-subtle)">Protects the Google/GitHub sign-in step against forgery</td>
+              <td className="py-2 border-b border-(--border-subtle)">10 minutes</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Both are first-party, strictly necessary for a service you asked for, and are not used for tracking, so they do not require consent.</p>
+
+      <H2>What else we store in your browser</H2>
       <p>
         A couple of settings are saved in your browser&apos;s local storage so the site remembers choices you made. They never
         leave your device and you can clear them at any time in your browser settings.
@@ -59,7 +86,8 @@ export default function CookiesPage() {
 
       <H2>Changes and contact</H2>
       <p>
-        If we ever add cookies that need consent, we will update this page and ask for your consent first. Questions: <Mail />.
+        If we ever add cookies that need consent, we will update this page and ask for your consent first. Google and GitHub
+        set their own cookies on their sign-in pages under their policies. Questions: <Mail />.
         See also our <Link href="/privacy" className="text-(--kalshi-teal) hover:underline">Privacy Policy</Link>.
       </p>
     </LegalPage>

@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Copy, KeyRound } from "lucide-react";
+import { ArrowRight, Check, KeyRound } from "lucide-react";
 
-const STREAM_URL = process.env.NEXT_PUBLIC_STREAM_URL ?? "wss://pred-market.fly.dev/v1/stream";
-const REST_URL = STREAM_URL.replace(/^ws/, "http").replace(/\/v1\/stream$/, "");
+import { STREAM_URL, REST_URL } from "@/lib/streamLimits";
 
 // Keep in sync with ws-proxy/src/limits.ts (free tier).
 const FREE_FEATURES = [
@@ -13,7 +12,8 @@ const FREE_FEATURES = [
   "Up to 25 matched pairs per connection",
   "Arb stream: open / update / close events (top 20 in each snapshot)",
   "15 minutes of realtime updates per day, then a digest every 30s",
-  "1 connection per key · 60 REST requests per hour",
+  "1 connection per account · 60 REST requests per hour",
+  "API dashboard with your keys and usage",
 ];
 
 const CONNECT_SNIPPET = `const ws = new WebSocket("${STREAM_URL}?api_key=YOUR_KEY");
@@ -67,67 +67,15 @@ function Code({ children }: { children: string }) {
   );
 }
 
-function KeyBox({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div className="surface rounded-xl p-3 flex items-center gap-3 mt-3">
-      <code className="flex-1 font-mono text-sm text-(--text-primary) break-all">{value}</code>
-      <button
-        onClick={async () => {
-          await navigator.clipboard.writeText(value);
-          setCopied(true);
-        }}
-        className="px-3 py-2 rounded-lg bg-(--bg-subtle) text-sm text-(--text-primary) inline-flex items-center gap-1.5"
-      >
-        {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-        {copied ? "Copied" : "Copy"}
-      </button>
-    </div>
-  );
-}
-
 export default function DevelopersClient() {
-  const [email, setEmail] = useState("");
-  const [accepted, setAccepted] = useState(false);
-  const [signingUp, setSigningUp] = useState(false);
-  const [signupKey, setSignupKey] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [manageKey, setManageKey] = useState("");
-  const [manageMsg, setManageMsg] = useState<string | null>(null);
-  const [newKey, setNewKey] = useState<string | null>(null);
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
-  const signup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSigningUp(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/stream/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, accept_terms: accepted }),
-      });
-      const body = await res.json();
-      if (!res.ok || !body.key) throw new Error(body.error ?? "signup failed");
-      setSignupKey(body.key);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setSigningUp(false);
-    }
-  };
-
-  const rotate = async () => {
-    setManageMsg(null);
-    setNewKey(null);
-    const res = await fetch("/api/stream/key", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ api_key: manageKey }),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) return setManageMsg(body.error ?? "something went wrong");
-    setNewKey(body.key);
-  };
+  useEffect(() => {
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((b) => setSignedIn(!!b.user))
+      .catch(() => setSignedIn(false));
+  }, []);
 
   return (
     <div className="overflow-x-hidden">
@@ -168,45 +116,20 @@ export default function DevelopersClient() {
             <h2 className="text-lg font-semibold text-(--text-primary) mb-1 flex items-center gap-2">
               <KeyRound className="w-4 h-4" /> Get a free API key
             </h2>
-            {signupKey ? (
-              <>
-                <p className="text-sm text-(--text-secondary)">
-                  Here is your key. <strong className="text-(--text-primary)">It is shown only once</strong>, so store it now.
-                </p>
-                <KeyBox value={signupKey} />
-                <a href="#docs" className="inline-block text-sm text-(--kalshi-teal) hover:underline mt-4">
-                  Connect to the stream →
-                </a>
-              </>
-            ) : (
-              <form onSubmit={signup} className="space-y-3">
-                <p className="text-sm text-(--text-secondary)">One key per email. We only use it to contact you about the API.</p>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full px-3 py-2 rounded-lg bg-(--bg-subtle) border border-(--border) text-sm text-(--text-primary)"
-                />
-                <label className="flex gap-2 text-xs text-(--text-secondary) items-start">
-                  <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5" />
-                  <span>
-                    I agree to the <Link href="/terms" className="text-(--kalshi-teal) hover:underline">Terms of Service</Link> and{" "}
-                    <Link href="/privacy" className="text-(--kalshi-teal) hover:underline">Privacy Policy</Link>.
-                  </span>
-                </label>
-                <button
-                  type="submit"
-                  disabled={signingUp || !accepted || !email}
-                  className="btn-lift w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-(--kalshi-teal) hover:opacity-90 text-white font-semibold text-sm disabled:opacity-60"
-                >
-                  {signingUp ? "Creating key…" : "Get my key"}
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                {error && <p className="text-sm text-red-500">{error}</p>}
-              </form>
-            )}
+            <p className="text-sm text-(--text-secondary) mb-5">
+              Sign in with Google or GitHub to create keys and track your usage in the API dashboard. No password, no card.
+            </p>
+            <Link
+              href={signedIn ? "/dashboard" : "/login?next=/dashboard"}
+              className="btn-lift w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-(--kalshi-teal) hover:opacity-90 text-white font-semibold text-sm"
+            >
+              {signedIn ? "Open your dashboard" : "Sign in to get a key"}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <p className="text-xs text-(--text-muted) mt-4">
+              By signing in you agree to the <Link href="/terms" className="underline">Terms</Link> and{" "}
+              <Link href="/privacy" className="underline">Privacy Policy</Link>.
+            </p>
           </div>
         </div>
         <p className="text-xs text-(--text-muted) mt-4 max-w-3xl">
@@ -255,30 +178,6 @@ REST responses carry X-RateLimit-Limit / -Remaining / -Reset headers.`}</Code>
         </div>
       </section>
 
-      {/* Manage */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-        <div className="surface rounded-2xl p-6 max-w-4xl">
-          <h2 className="text-lg font-semibold text-(--text-primary) mb-1 flex items-center gap-2">
-            <KeyRound className="w-4 h-4" /> Rotate your key
-          </h2>
-          <p className="text-sm text-(--text-secondary) mb-4">
-            If your key leaked, swap it for a new one. The old key stops working within a minute.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              value={manageKey}
-              onChange={(e) => setManageKey(e.target.value)}
-              placeholder="opk_..."
-              className="flex-1 px-3 py-2 rounded-lg bg-(--bg-subtle) border border-(--border) text-sm font-mono text-(--text-primary)"
-            />
-            <button onClick={rotate} disabled={!manageKey} className="px-4 py-2 rounded-lg surface text-sm text-(--text-primary) hover:bg-(--surface-hover) disabled:opacity-50">
-              Rotate key
-            </button>
-          </div>
-          {manageMsg && <p className="text-sm text-red-500 mt-3">{manageMsg}</p>}
-          {newKey && <KeyBox value={newKey} />}
-        </div>
-      </section>
     </div>
   );
 }

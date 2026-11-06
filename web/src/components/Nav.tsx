@@ -16,10 +16,47 @@ const links = [
   { href: "/developers", label: "API" },
 ];
 
+interface Me {
+  name: string;
+  image: string | null;
+}
+
+/** "Sign in", or the signed-in user's avatar linking to their dashboard. */
+function AccountLink({ me, className = "" }: { me: Me | null | undefined; className?: string }) {
+  if (me === undefined) return <span className="w-8 h-8" aria-hidden="true" />; // still loading
+  if (!me) {
+    return (
+      <Link href="/login" className={`px-3 py-1.5 rounded-lg text-sm text-(--text-primary) surface hover:bg-(--surface-hover) ${className}`}>
+        Sign in
+      </Link>
+    );
+  }
+  return (
+    <Link href="/dashboard" className={`inline-flex items-center gap-2 rounded-lg text-sm text-(--text-primary) ${className}`} title={me.name}>
+      {me.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={me.image} alt="" width={28} height={28} className="rounded-full" referrerPolicy="no-referrer" />
+      ) : (
+        <span className="w-7 h-7 rounded-full bg-(--surface) inline-flex items-center justify-center text-xs">{me.name.slice(0, 1)}</span>
+      )}
+      <span className="hidden lg:inline">Dashboard</span>
+    </Link>
+  );
+}
+
 export default function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [me, setMe] = useState<Me | null | undefined>(undefined);
+
+  // Asked client-side so every page can stay statically rendered.
+  useEffect(() => {
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((b) => setMe(b.user ?? null))
+      .catch(() => setMe(null));
+  }, [pathname]);
 
   // Close on route change
   useEffect(() => { setOpen(false); }, [pathname]);
@@ -68,6 +105,7 @@ export default function Nav() {
               Live
             </div>
             <ThemeToggle />
+            <AccountLink me={me} className="hidden md:inline-flex" />
             <button
               onClick={() => setOpen(!open)}
               className="btn-icon md:hidden text-(--text-secondary) hover:text-(--text-primary) p-1.5"
@@ -95,6 +133,13 @@ export default function Nav() {
               {l.label}
             </Link>
           ))}
+          <Link
+            href={me ? "/dashboard" : "/login"}
+            onClick={() => setOpen(false)}
+            className="flex items-center px-3 py-2.5 rounded-lg text-sm text-(--text-primary) hover:bg-(--surface-hover)"
+          >
+            {me ? "API dashboard" : "Sign in"}
+          </Link>
           <div className="flex items-center gap-1.5 px-3 py-2 text-xs text-(--kalshi-teal)">
             <span className="w-1.5 h-1.5 rounded-full bg-(--kalshi-teal) live-dot" />
             Live prices

@@ -1,14 +1,13 @@
 import crypto from "node:crypto";
 import { DeleteCommand, GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { db, TABLE, nowSec } from "./db";
+import { db, TABLE, nowSec, queryAll } from "./db";
 
 // Data stream API keys. Only a hash of each key is stored; the raw key is shown
 // to the subscriber once. Items (see db.ts for the table layout):
 //   apikey / <sha256(key)>          tier, status, subscription, customer
 //   apisub / <subscriptionId>       keyHash of the subscription's current key
 //   apireveal / <checkoutSessionId> raw key, held until the success page shows it (ttl)
-//   apiemail / <email>              keyHash of a free key (one per email)
-//   signupip#<sha256(ip)> / <date>  free signups from an IP that day (ttl; the IP itself is not stored)
+//   userkey#<userId> / <sha256(key)> name, prefix, created, last_used — an account's keys
 
 export type Tier = "free" | "quotes" | "pro";
 
@@ -16,13 +15,11 @@ export interface ApiKeyRecord {
   tier: Tier;
   status: string; // Stripe subscription status, or "active" for free keys
   label: string;  // stable subscriber id the stream service uses for limits
+  userId?: string;
   subscription?: string;
   customer?: string;
-  email?: string;
   livemode: boolean; // test-mode keys only work while the site runs on a test Stripe key
 }
-
-const MAX_SIGNUPS_PER_IP_PER_DAY = 3;
 
 // Statuses where Stripe still expects payment, so access continues (past_due = retrying a failed charge).
 const ACTIVE_STATUSES = new Set(["active", "trialing", "past_due"]);
@@ -107,62 +104,78 @@ export async function syncSubscription(subscription: string, status: string, tie
   );
 }
 
-/** Replace a key with a new one for the same subscription. Returns the new raw key. */
-export async function rotateKey(oldKey: string): Promise<string | null> {
-  const oldHash = hashKey(oldKey);
-  const record = await getKey(oldKey);
-  if (!record) return null;
-  const key = newKey();
-  const keyHash = hashKey(key);
-  await db().send(new PutCommand({ TableName: TABLE, Item: { pk: "apikey", sk: keyHash, ...record } }));
-  if (record.subscription) {
-    await db().send(new PutCommand({ TableName: TABLE, Item: { pk: "apisub", sk: record.subscription, keyHash } }));
-  }
-  if (record.email) {
-    await db().send(new PutCommand({ TableName: TABLE, Item: { pk: "apiemail", sk: record.email, keyHash } }));
-  }
-  await db().send(new DeleteCommand({ TableName: TABLE, Key: { pk: "apikey", sk: oldHash } }));
-  return key;
+// ── Account keys ───────────────────────────────────────────────────────────
+
+export const MAX_KEYS_PER_USER = 3;
+
+export interface UserKey {
+  id: string;      // sha256 of the key; safe to show, can't be turned back into the key
+  name: string;
+  prefix: string;  // first characters of the key, to tell keys apart
+  tier: Tier;
+  created: string;
+  last_used: string | null;
 }
 
-export type FreeSignupResult = { key: string } | { error: "email_taken" | "ip_limit" };
+export const userLabel = (userId: string) => `user:${userId}`;
 
-/** Issue a free-tier key: one per email, a few per IP per day. */
-export async function createFreeKey(email: string, ip: string): Promise<FreeSignupResult> {
-  const day = new Date().toISOString().slice(0, 10);
-  const count = await db().send(
-    new UpdateCommand({
-      TableName: TABLE,
-      Key: { pk: `signupip#${hashKey(ip).slice(0, 32)}`, sk: day },
-      UpdateExpression: "ADD n :one SET #ttl = :ttl",
-      ExpressionAttributeNames: { "#ttl": "ttl" },
-      ExpressionAttributeValues: { ":one": 1, ":ttl": nowSec() + 2 * 86400 },
-      ReturnValues: "UPDATED_NEW",
-    })
-  );
-  if (Number(count.Attributes?.n) > MAX_SIGNUPS_PER_IP_PER_DAY) return { error: "ip_limit" };
+export async function listUserKeys(userId: string): Promise<UserKey[]> {
+  const items = await queryAll(`userkey#${userId}`);
+  return items
+    .map((i) => ({
+      id: i.sk as string,
+      name: i.name as string,
+      prefix: i.prefix as string,
+      tier: (i.tier as Tier) ?? "free",
+      created: i.created as string,
+      last_used: (i.last_used as string | undefined) ?? null,
+    }))
+    .sort((a, b) => a.created.localeCompare(b.created));
+}
 
+/** Issue a free-tier key on an account. Returns the raw key, which is shown once. */
+export async function createUserKey(userId: string, name: string): Promise<{ key: string; item: UserKey } | null> {
+  if ((await listUserKeys(userId)).length >= MAX_KEYS_PER_USER) return null;
   const key = newKey();
   const keyHash = hashKey(key);
-  try {
-    await db().send(
-      new PutCommand({
-        TableName: TABLE,
-        Item: { pk: "apiemail", sk: email, keyHash },
-        ConditionExpression: "attribute_not_exists(pk)",
-      })
-    );
-  } catch (e) {
-    if ((e as Error).name === "ConditionalCheckFailedException") return { error: "email_taken" };
-    throw e;
-  }
-  const record: ApiKeyRecord = {
-    tier: "free",
-    status: "active",
-    label: `free:${hashKey(email).slice(0, 16)}`,
-    email,
-    livemode: true,
-  };
+  const created = new Date().toISOString();
+  const prefix = key.slice(0, 10);
+  const record: ApiKeyRecord = { tier: "free", status: "active", label: userLabel(userId), userId, livemode: true };
   await db().send(new PutCommand({ TableName: TABLE, Item: { pk: "apikey", sk: keyHash, ...record } }));
-  return { key };
+  await db().send(
+    new PutCommand({
+      TableName: TABLE,
+      Item: { pk: `userkey#${userId}`, sk: keyHash, name, prefix, tier: record.tier, created },
+    })
+  );
+  return { key, item: { id: keyHash, name, prefix, tier: record.tier, created, last_used: null } };
+}
+
+/** Revoke one of an account's keys. Returns false if the key isn't theirs. */
+export async function revokeUserKey(userId: string, keyHash: string): Promise<boolean> {
+  const res = await db().send(
+    new DeleteCommand({ TableName: TABLE, Key: { pk: `userkey#${userId}`, sk: keyHash }, ReturnValues: "ALL_OLD" })
+  );
+  if (!res.Attributes) return false;
+  await db().send(new DeleteCommand({ TableName: TABLE, Key: { pk: "apikey", sk: keyHash } }));
+  return true;
+}
+
+/** Record when keys were last seen by the stream service. */
+export async function touchKeys(userId: string, keyHashes: string[], when: string): Promise<void> {
+  for (const keyHash of keyHashes) {
+    await db()
+      .send(
+        new UpdateCommand({
+          TableName: TABLE,
+          Key: { pk: `userkey#${userId}`, sk: keyHash },
+          UpdateExpression: "SET last_used = :t",
+          ExpressionAttributeValues: { ":t": when },
+          ConditionExpression: "attribute_exists(pk)", // don't resurrect revoked keys
+        })
+      )
+      .catch((e) => {
+        if ((e as Error).name !== "ConditionalCheckFailedException") throw e;
+      });
+  }
 }
