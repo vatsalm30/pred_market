@@ -444,7 +444,10 @@ export default function DashboardClient() {
               </div>
             ))}
           </dl>
-          <p className="text-xs text-(--text-muted) mt-3">Limits reset at 00:00 UTC. Need more? Email us — paid plans are coming.</p>
+          <p className="text-xs text-(--text-muted) mt-3">
+            Limits reset at 00:00 UTC. Need more, or something not working? Email{" "}
+            <a href="mailto:support@omnipred.com" className="underline hover:text-(--text-primary)">support@omnipred.com</a>.
+          </p>
         </section>
 
         {/* Quick start */}

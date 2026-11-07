@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const LEGAL_UPDATED = "November 6, 2026";
-export const CONTACT_EMAIL = "vatsalm30@gmail.com";
+export const CONTACT_EMAIL = "contact@omnipred.com";
 
 const LINKS = [
   { href: "/privacy", label: "Privacy Policy" },

@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
+const SUPPORT_EMAIL = "support@omnipred.com";
+
 const ERRORS: Record<string, string> = {
   cancelled: "Sign-in was cancelled.",
   state: "That sign-in link expired. Please try again.",
@@ -79,6 +81,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         By continuing you agree to our <Link href="/terms" className="underline hover:text-(--text-primary)">Terms of Service</Link>{" "}
         and <Link href="/privacy" className="underline hover:text-(--text-primary)">Privacy Policy</Link>. We get your name,
         email address and profile picture from the provider and nothing else.
+      </p>
+      <p className="text-xs text-(--text-muted) mt-3">
+        Trouble signing in? Email{" "}
+        <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-(--text-primary)">{SUPPORT_EMAIL}</a>.
       </p>
     </section>
   );
