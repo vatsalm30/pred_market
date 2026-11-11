@@ -9,6 +9,7 @@ import { STREAM_URL, REST_URL } from "@/lib/streamLimits";
 // Keep in sync with ws-proxy/src/limits.ts (free tier).
 const FREE_FEATURES = [
   "Live best ask + size for YES and NO on Kalshi and Polymarket",
+  "Median under 100 ms from the exchange to your socket (US East Coast)",
   "Up to 25 matched pairs per connection",
   "Arb stream: open / update / close events (top 20 in each snapshot)",
   "15 minutes of realtime updates per day, then a digest every 30s",
@@ -83,13 +84,14 @@ export default function DevelopersClient() {
         <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-(--bg-subtle) mb-5">
           <span className="w-1.5 h-1.5 rounded-full bg-(--kalshi-teal) live-dot" />
           <span className="text-[10px] uppercase tracking-widest text-(--text-muted) font-medium">
-            Free beta · WebSocket · order-book driven
+            Free beta · WebSocket · &lt;100 ms median
           </span>
         </div>
         <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-(--text-primary) mb-4">OmniPred Data Stream</h1>
         <p className="text-(--text-secondary) text-base sm:text-xl leading-relaxed max-w-2xl">
           One socket for live Kalshi and Polymarket prices on the same questions, plus a cross-venue arbitrage feed
-          computed from the actual order books. We maintain both venues&apos; books and push the top of book the moment it moves.
+          computed from the actual order books. We maintain both venues&apos; books and push the top of book the moment it
+          moves, typically under 100 ms after the exchange records the change.
         </p>
       </section>
 
@@ -164,6 +166,31 @@ export default function DevelopersClient() {
             <code>close</code> when the gap is gone. One of the two legs pays $1 at settlement.
           </p>
           <Code>{ARB_SAMPLE}</Code>
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold text-(--text-primary) mb-2">Latency</h2>
+          <p className="text-sm text-(--text-secondary) mb-3">
+            Nothing is batched while you&apos;re in realtime mode: each order-book change is pushed as soon as we process it.
+            In our measurements from the US East Coast, the time from the exchange&apos;s own timestamp to the message
+            arriving at the client had a median of about 55 ms for Polymarket and 80 ms for Kalshi, with 90% of updates
+            under 130 ms. Our servers are in Newark, NJ, so expect more from farther away.
+          </p>
+          <p className="text-sm text-(--text-secondary) mb-3">
+            Every quote carries <code>exchange_ts</code> (when the venue says the change happened) and <code>recv_ts</code>{" "}
+            (when our server received it), both in Unix milliseconds, so you can measure it yourself. Use{" "}
+            <code>ping</code> to correct for your clock:
+          </p>
+          <Code>{`// offset = server clock - your clock, from a ping round trip
+const sent = Date.now();
+ws.send(JSON.stringify({ op: "ping" }));
+// on {"type":"pong","ts":...}:  offset = pong.ts - (sent + (Date.now() - sent) / 2)
+
+// on each quote:
+const latencyMs = Date.now() + offset - msg.kalshi.exchange_ts;`}</Code>
+          <p className="text-xs text-(--text-muted) mt-3">
+            Figures depend on the venues&apos; clocks and network conditions and are not guaranteed. Free accounts get
+            realtime delivery for 15 minutes a day, then 30-second digests.
+          </p>
         </div>
         <div>
           <h2 className="text-xl font-semibold text-(--text-primary) mb-2">Other operations and REST</h2>
