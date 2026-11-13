@@ -74,7 +74,7 @@ export default function CookiesPage() {
 
       <H2>Analytics</H2>
       <p>
-        We use Vercel Web Analytics to count page views. It works without cookies or local storage and does not store your IP
+        We use Cloudflare Web Analytics to count page views. It works without cookies or local storage and does not store your IP
         address or track you across sites or visits.
       </p>
 

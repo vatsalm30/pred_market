@@ -4,7 +4,7 @@ Usage: job.py prices | job.py full
 
 The pipeline scripts use relative paths, so each run copies them into a
 scratch dir. matched_markets.csv persists between runs in GCS, and the JSON
-output is committed to GitHub so Vercel redeploys with fresh data, same as
+output is committed to GitHub and the hourly site deploy picks it up, same as
 the old GitHub Actions workflow.
 """
 import base64, glob, json, os, shutil, subprocess, sys, urllib.request

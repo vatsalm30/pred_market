@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import fs from "fs";
-import path from "path";
 import ArbDetailClient from "./ArbDetailClient";
-import type { ArbitrageOpportunity } from "@/lib/csv";
+import { getArbMeta } from "@/lib/staticData";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -11,9 +9,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const decodedSlug = decodeURIComponent(slug);
 
   try {
-    const filePath = path.join(process.cwd(), "public", "data", "arbitrage_opportunities.json");
-    const opps: ArbitrageOpportunity[] = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    const opp = opps.find((o) => o.kalshi_market_id === decodedSlug);
+    const opp = await getArbMeta(decodedSlug);
 
     if (!opp) return { title: "Opportunity Not Found" };
 

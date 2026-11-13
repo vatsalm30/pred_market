@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const LEGAL_UPDATED = "November 6, 2026";
+export const LEGAL_UPDATED = "November 13, 2026";
 export const CONTACT_EMAIL = "contact@omnipred.com";
 
 const LINKS = [

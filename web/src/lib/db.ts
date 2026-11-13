@@ -14,7 +14,7 @@ import { DynamoDBDocumentClient, PutCommand, QueryCommand } from "@aws-sdk/lib-d
 //   user, userlogin#<provider>, useremail       accounts (users.ts)
 //   usage#<label> / <date>, live / <label>      stream usage reported by ws-proxy (usage.ts)
 //
-// Credentials use OMNIPRED_-prefixed names because Vercel reserves AWS_*.
+// Credentials use OMNIPRED_-prefixed names because some hosts reserve AWS_*.
 
 let _db: DynamoDBDocumentClient | null = null;
 

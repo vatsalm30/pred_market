@@ -19,8 +19,8 @@ export default function PrivacyPage() {
       <H2>What we collect</H2>
       <ul className="list-disc pl-5 space-y-2">
         <li>
-          <strong className="text-(--text-primary)">Browsing the site.</strong> No account needed and no tracking cookies. Our host (Vercel) processes
-          your IP address and browser details to serve pages and keeps standard server logs. We use Vercel Web Analytics,
+          <strong className="text-(--text-primary)">Browsing the site.</strong> No account needed and no tracking cookies. Our host (Cloudflare) processes
+          your IP address and browser details to serve pages and keeps standard server logs. We use Cloudflare Web Analytics,
           which counts page views without cookies and without storing your IP address or building a profile of you.
         </li>
         <li>
@@ -62,7 +62,7 @@ export default function PrivacyPage() {
 
       <H2>Who processes it for us</H2>
       <ul className="list-disc pl-5 space-y-2">
-        <li>Vercel Inc. — website hosting and cookieless analytics (USA).</li>
+        <li>Cloudflare, Inc. — website hosting, DNS, email forwarding and cookieless analytics (USA).</li>
         <li>Google and GitHub — only if you choose to sign in with them, under their own privacy policies.</li>
         <li>Amazon Web Services — database storing accounts, API keys, usage and Telegram subscriptions (USA, us-east-1).</li>
         <li>Fly.io — hosting for the Data Stream server (USA).</li>

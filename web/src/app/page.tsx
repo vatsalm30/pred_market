@@ -1,10 +1,9 @@
 import Link from "next/link";
-import fs from "fs";
-import path from "path";
 import { ArrowRight, Zap, TrendingUp, Bell } from "lucide-react";
 import { PolymarketLogo, KalshiLogo, TelegramLogo, TelegramPlaneIcon } from "@/components/PlatformLogos";
 import { formatVolume } from "@/lib/csv";
 import { getRecentWhales, type WhaleTrade } from "@/lib/whale";
+import { getHomeStats as readHomeStats } from "@/lib/staticData";
 
 export const revalidate = 3600;
 
@@ -42,19 +41,9 @@ function Ticker() {
   );
 }
 
-function getHomeStats() {
+async function getHomeStats() {
   try {
-    const base    = path.join(process.cwd(), "public", "data");
-    const events  = JSON.parse(fs.readFileSync(path.join(base, "all_events.json"), "utf8"))              as Array<{ volume?: number }>;
-    const matched = JSON.parse(fs.readFileSync(path.join(base, "matched_markets.json"), "utf8"))         as Array<{ poly_event: string }>;
-    const arb     = JSON.parse(fs.readFileSync(path.join(base, "arbitrage_opportunities.json"), "utf8")) as unknown[];
-    return {
-      totalMarkets:  events.length,
-      matchedEvents: new Set(matched.map((r) => r.poly_event)).size,
-      outcomePairs:  matched.length,
-      arbOpps:       arb.length,
-      totalVolume:   events.reduce((s, e) => s + (e.volume ?? 0), 0),
-    };
+    return await readHomeStats();
   } catch {
     return { totalMarkets: 0, matchedEvents: 0, outcomePairs: 0, arbOpps: 0, totalVolume: 0 };
   }
@@ -67,7 +56,7 @@ function fmtWhaleUsd(v: number): string {
 }
 
 export default async function HomePage() {
-  const stats = getHomeStats();
+  const stats = await getHomeStats();
   const recentWhales = await getRecentWhales(5);
 
   return (

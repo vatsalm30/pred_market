@@ -8,7 +8,7 @@ export function stripe(): Stripe {
     const key = process.env.STRIPE_SECRET_KEY;
     if (!key) throw new Error("STRIPE_SECRET_KEY not set");
     // Production must take real payments: refuse a sandbox/test key there.
-    if (process.env.VERCEL_ENV === "production" && !/^(sk|rk)_live_/.test(key)) {
+    if (process.env.DEPLOY_ENV === "production" && !/^(sk|rk)_live_/.test(key)) {
       throw new Error("production requires a live Stripe key");
     }
     _stripe = new Stripe(key);

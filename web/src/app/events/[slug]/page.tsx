@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import fs from "fs";
-import path from "path";
 import EventDetailClient from "./EventDetailClient";
-import type { AllEvent } from "@/lib/csv";
+import { getEventMeta } from "@/lib/staticData";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -11,9 +9,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const decodedSlug = decodeURIComponent(slug);
 
   try {
-    const filePath = path.join(process.cwd(), "public", "data", "all_events.json");
-    const events: AllEvent[] = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    const event = events.find((e) => e.id === decodedSlug);
+    const event = await getEventMeta(decodedSlug);
 
     if (!event) return { title: "Market Not Found" };
 

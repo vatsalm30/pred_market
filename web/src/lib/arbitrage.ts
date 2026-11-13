@@ -1,6 +1,5 @@
-import fs from "fs";
-import path from "path";
 import type { ArbitrageOpportunity, MatchedMarket } from "./csv";
+import { readData } from "./staticData";
 
 const KALSHI_BASE = "https://api.elections.kalshi.com/trade-api/v2";
 const POLY_GAMMA = "https://gamma-api.polymarket.com/markets";
@@ -165,9 +164,7 @@ export async function findLiveOpportunities(): Promise<{
 }> {
   const start = Date.now();
 
-  const filePath = path.join(process.cwd(), "public", "data", "matched_markets.json");
-  const raw = fs.readFileSync(filePath, "utf-8");
-  const matches = JSON.parse(raw) as MatchedMarket[];
+  const matches = await readData<MatchedMarket[]>("matched_markets.json");
 
   const kalshiTickers = Array.from(
     new Set(matches.map((m) => String(m.kalshi_market_id)).filter(Boolean))
