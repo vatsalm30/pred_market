@@ -2,8 +2,8 @@
 // Two sources:
 //  - zone HTTP analytics: every request through Cloudflare (includes bots and API calls)
 //  - Web Analytics (RUM): page loads from real browsers via the beacon, with paths and referrers
-// Env: CF_ANALYTICS_TOKEN (Account Analytics:Read + Zone Analytics:Read), CF_ZONE_ID,
-//      CF_ACCOUNT_ID, CF_WEB_ANALYTICS_SITE_TAG (optional; RUM sections are skipped without it).
+// Env: CF_ANALYTICS_TOKEN (Account Analytics:Read + Zone Analytics:Read), CF_ANALYTICS_ZONE_ID,
+//      CF_ANALYTICS_ACCOUNT_ID, CF_WEB_ANALYTICS_SITE_TAG (optional; RUM sections are skipped without it).
 
 const ENDPOINT = "https://api.cloudflare.com/client/v4/graphql";
 
@@ -31,7 +31,7 @@ export interface SiteAnalytics {
 }
 
 export const analyticsConfigured = () =>
-  !!(process.env.CF_ANALYTICS_TOKEN && process.env.CF_ZONE_ID && process.env.CF_ACCOUNT_ID);
+  !!(process.env.CF_ANALYTICS_TOKEN && process.env.CF_ANALYTICS_ZONE_ID && process.env.CF_ANALYTICS_ACCOUNT_ID);
 
 async function gql<T>(query: string, variables: Record<string, unknown>): Promise<T> {
   const res = await fetch(ENDPOINT, {
@@ -97,10 +97,10 @@ export async function getSiteAnalytics(days: number): Promise<SiteAnalytics> {
   const siteTag = process.env.CF_WEB_ANALYTICS_SITE_TAG;
 
   const [zone, rum] = await Promise.all([
-    gql<ZoneData>(ZONE_QUERY, { zone: process.env.CF_ZONE_ID, since: isoDate(since), until: isoDate(until) }),
+    gql<ZoneData>(ZONE_QUERY, { zone: process.env.CF_ANALYTICS_ZONE_ID, since: isoDate(since), until: isoDate(until) }),
     siteTag
       ? gql<RumData>(RUM_QUERY, {
-          account: process.env.CF_ACCOUNT_ID,
+          account: process.env.CF_ANALYTICS_ACCOUNT_ID,
           filter: { siteTag, datetime_geq: `${isoDate(since)}T00:00:00Z`, datetime_leq: until.toISOString(), bot: 0 },
         })
       : null,

@@ -33,7 +33,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   let data: SiteAnalytics | null = null;
   let error: string | null = null;
   if (!analyticsConfigured()) {
-    error = "Analytics isn't configured. Set CF_ANALYTICS_TOKEN, CF_ZONE_ID and CF_ACCOUNT_ID.";
+    error = "Analytics isn't configured. Set CF_ANALYTICS_TOKEN, CF_ANALYTICS_ZONE_ID and CF_ANALYTICS_ACCOUNT_ID.";
   } else {
     try {
       data = await getSiteAnalytics(days);
