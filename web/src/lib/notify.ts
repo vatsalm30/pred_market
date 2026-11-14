@@ -78,7 +78,8 @@ export async function sendEmails(emails: Email[]): Promise<boolean> {
   const res = await fetch("https://api.resend.com/emails/batch", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify(emails.slice(0, 100).map((e) => ({ from, ...e }))),
+    // digest@ has no inbox; replies go to the contact address, which forwards to the team
+    body: JSON.stringify(emails.slice(0, 100).map((e) => ({ from, reply_to: "contact@omnipred.com", ...e }))),
     signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) console.error("resend:", res.status, await res.text().catch(() => ""));
