@@ -100,7 +100,20 @@ export default async function BlogPostPage({ params }: Props) {
       )}
 
       {/* Body */}
-      <p className="text-(--text-secondary) leading-relaxed mb-8">{post.body}</p>
+      {/* Blank lines separate paragraphs; a block starting with "## " is a subheading */}
+      <div className="mb-8 space-y-4">
+        {post.body.split(/\n\s*\n/).map((block, i) =>
+          block.startsWith("## ") ? (
+            <h2 key={i} className="text-lg font-semibold text-(--text-primary) pt-2">
+              {block.slice(3).trim()}
+            </h2>
+          ) : (
+            <p key={i} className="text-(--text-secondary) leading-relaxed">
+              {block.trim()}
+            </p>
+          )
+        )}
+      </div>
 
       {/* Table */}
       {post.table.length > 0 && (

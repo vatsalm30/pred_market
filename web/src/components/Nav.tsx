@@ -10,6 +10,7 @@ import { OmnipredLogo } from "./Logo";
 const links = [
   { href: "/events",    label: "All Markets" },
   { href: "/arbitrage", label: "Arbitrage" },
+  { href: "/whale",     label: "Whales" },
   { href: "/alerts",    label: "Alerts" },
   { href: "/news",      label: "News" },
   { href: "/blog",      label: "Blog" },

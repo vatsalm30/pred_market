@@ -8,6 +8,7 @@ import { fetchArbitrageOpportunities, type ArbitrageOpportunity, categoryFromEve
 import { PolymarketLogo, KalshiLogo } from "@/components/PlatformLogos";
 import EventIcon from "@/components/EventIcon";
 import { useLivePrices } from "@/hooks/useLivePrices";
+import { netAfterFeesPct, FEE_NOTE } from "@/lib/fees";
 
 function fmtDate(d?: string): string {
   if (!d) return "—";
@@ -62,6 +63,7 @@ function ArbCard({
 
   const displayKalshi = liveKalshiAsk ?? opp.kalshi_ask;
   const displayPoly   = livePolyAsk   ?? opp.poly_ask;
+  const afterFees     = netAfterFeesPct(opp.kalshi_ask, opp.poly_ask);
 
   return (
     <div className="market-card surface rounded-2xl overflow-hidden flex flex-col">
@@ -124,6 +126,12 @@ function ArbCard({
           <span className="text-(--arb-amber) font-mono font-medium">
             +{(opp.gross_spread * 100).toFixed(2)}¢
           </span>
+          <span
+            title={FEE_NOTE}
+            className={`font-mono font-medium ${afterFees > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}
+          >
+            {afterFees > 0 ? `≈+${afterFees.toFixed(1)}% net` : "loses after fees"}
+          </span>
           {opp.poly_end_date && (
             <span className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
@@ -168,7 +176,7 @@ function ArbitrageContent() {
   const [search, setSearch]   = useState(searchParams.get("event") || "");
   const [category, setCategory] = useState("All");
   const [minProfit, setMinProfit] = useState(0);
-  const [sortBy, setSortBy]   = useState<"profit" | "spread" | "match" | "date" | "volume">("profit");
+  const [sortBy, setSortBy]   = useState<"profit" | "net" | "spread" | "match" | "date" | "volume">("profit");
   const [page, setPage]       = useState(1);
   const sentinelRef           = useRef<HTMLDivElement>(null);
 
@@ -195,6 +203,7 @@ function ArbitrageContent() {
         })
         .sort((a, b) => {
           if (sortBy === "profit") return b.net_profit_pct - a.net_profit_pct;
+          if (sortBy === "net") return netAfterFeesPct(b.kalshi_ask, b.poly_ask) - netAfterFeesPct(a.kalshi_ask, a.poly_ask);
           if (sortBy === "spread") return b.gross_spread - a.gross_spread;
           if (sortBy === "date") {
             const da = a.poly_end_date || "9999-12-31";
@@ -222,6 +231,7 @@ function ArbitrageContent() {
   const topProfit  = opps.length ? Math.max(...opps.map((o) => o.net_profit_pct)) : 0;
   const categories = ["All", "Politics", "Sports", "Economics", "Tech", "Other"];
   const totalVol   = opps.reduce((s, o) => s + (o.poly_volume || 0), 0);
+  const afterFeeCount = opps.filter((o) => netAfterFeesPct(o.kalshi_ask, o.poly_ask) > 0).length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -270,6 +280,7 @@ function ArbitrageContent() {
       {/* Stats */}
       <div className="flex flex-wrap gap-6 mb-8 text-sm text-(--text-secondary)">
         <span><strong className="text-(--text-primary) font-semibold tabular-nums">{loading ? "—" : opps.length}</strong> total opportunities</span>
+        <span title={FEE_NOTE}><strong className="text-(--text-primary) font-semibold tabular-nums">{loading ? "—" : afterFeeCount}</strong> still profitable after est. fees</span>
         <span><strong className="text-(--arb-amber) font-semibold tabular-nums">{loading ? "—" : topProfit.toFixed(0)}%</strong> highest profit*</span>
         {(loading || totalVol > 0) && (
           <span><strong className="text-(--text-primary) font-semibold">{loading ? "—" : formatVolume(totalVol)}</strong> total Poly vol</span>
@@ -321,7 +332,7 @@ function ArbitrageContent() {
           </div>
           <div className="flex items-center gap-1.5">
             <span className="text-(--text-muted) text-xs">Sort:</span>
-            {(["profit", "spread", "volume", "date", "match"] as const).map((s) => (
+            {(["profit", "net", "spread", "volume", "date", "match"] as const).map((s) => (
               <button key={s} onClick={() => setSortBy(s)}
                 className={`btn-pill px-2.5 py-1.5 rounded-lg text-xs font-medium capitalize ${
                   sortBy === s
@@ -329,7 +340,7 @@ function ArbitrageContent() {
                     : "text-(--text-muted) hover:text-(--text-primary)"
                 }`}
               >
-                {s}
+                {s === "net" ? "after fees" : s}
               </button>
             ))}
           </div>
@@ -383,7 +394,8 @@ function ArbitrageContent() {
 
       {!loading && (
         <p className="text-(--text-muted) text-xs mt-6">
-          * Very high profit % values may reflect stale data or market edge cases. Always verify prices directly.
+          * Profit is before fees. Very high values may reflect stale data or markets that resolve differently. Always verify prices directly.
+          {" "}Net figures: {FEE_NOTE}
         </p>
       )}
     </div>

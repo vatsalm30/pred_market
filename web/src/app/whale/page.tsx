@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import type { WhaleTrade } from "@/lib/whale";
+import WhaleTabs from "@/components/WhaleTabs";
 
 function timeAgo(ts: number): string {
   const diff = Math.floor(Date.now() / 1000) - ts;
@@ -76,6 +77,8 @@ export default function WhalePage() {
           </p>
         )}
       </div>
+
+      <WhaleTabs active="/whale" />
 
       {loading ? (
         <div className="space-y-2">
