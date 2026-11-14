@@ -147,7 +147,8 @@ export class Insights {
       const pr = this.probs(id);
       if (pr[0] !== null || pr[1] !== null) prices[id] = pr;
     }
-    await this.site.post("/ingest", { kind: "snapshot", hour, prices });
+    // Movers can live without one hour's snapshot; don't let it stop the per-pair history
+    await this.site.post("/ingest", { kind: "snapshot", hour, prices }).catch((e) => console.error("insights: snapshot", e instanceof Error ? e.message : e));
     const points = Object.entries(prices).map(([pair, [k, p]]) => ({ pair, k, p }));
     // 25 per request (one DynamoDB batch), spaced out to stay inside the table's write capacity
     for (let i = 0; i < points.length; i += 25) {
