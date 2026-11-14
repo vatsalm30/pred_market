@@ -1,4 +1,4 @@
-import { BatchWriteCommand, GetCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { db, TABLE, nowSec } from "./db";
 import { readData } from "./staticData";
 
@@ -16,17 +16,14 @@ export interface HistoryPoint {
 const HISTORY_TTL = 35 * 86400;
 const SNAP_TTL = 3 * 86400;
 
+/** Writes up to 25 hourly points (single puts: the site's IAM user has no BatchWriteItem). */
 export async function saveHistory(hour: string, points: { pair: string; k: number | null; p: number | null }[]) {
-  let requests = points.slice(0, 25).map((pt) => ({
-    PutRequest: { Item: { pk: `hist#${pt.pair}`, sk: hour, k: pt.k, p: pt.p, ttl: nowSec() + HISTORY_TTL } },
-  }));
-  // Retry anything throttled a couple of times, then give up on it (it's one hourly point)
-  for (let attempt = 0; attempt < 3 && requests.length; attempt++) {
-    const res = await db().send(new BatchWriteCommand({ RequestItems: { [TABLE]: requests } }));
-    requests = (res.UnprocessedItems?.[TABLE] ?? []) as typeof requests;
-    if (requests.length) await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
-  }
-  return points.length - requests.length;
+  const results = await Promise.allSettled(
+    points.slice(0, 25).map((pt) =>
+      db().send(new PutCommand({ TableName: TABLE, Item: { pk: `hist#${pt.pair}`, sk: hour, k: pt.k, p: pt.p, ttl: nowSec() + HISTORY_TTL } }))
+    )
+  );
+  return results.filter((r) => r.status === "fulfilled").length;
 }
 
 export async function getHistory(pairId: string, days: number): Promise<HistoryPoint[]> {
