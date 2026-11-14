@@ -214,6 +214,28 @@ export default function ArbDetailClient({ slug }: { slug: string }) {
         </div>
       )}
 
+      {/* Likely mismatch warning + the two questions side by side */}
+      {opp.suspect && (
+        <div className="flex items-start gap-2 bg-red-500/5 border border-red-500/20 rounded-xl px-4 py-3 mb-5 text-red-600 dark:text-red-400">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <p className="text-xs leading-relaxed">
+            The two venues price this {opp.gap_points} points apart{mismatch ? ` and settle ${Math.round(diff!)} days apart` : ""}. That almost
+            always means they are asking different questions, not that one is mispriced. Compare the exact wording below before trading.
+          </p>
+        </div>
+      )}
+      {(opp.poly_question || opp.kalshi_question) && (
+        <div className="surface rounded-xl px-4 py-3.5 mb-5 space-y-2">
+          <p className="text-[10px] text-(--text-muted) uppercase tracking-widest font-medium">Exact questions</p>
+          {opp.poly_question && (
+            <p className="text-xs"><span className="text-[#1652F0] dark:text-[#5b8df8] font-medium mr-1.5">Poly</span><span className="text-(--text-secondary)">{opp.poly_question}</span></p>
+          )}
+          {opp.kalshi_question && (
+            <p className="text-xs"><span className="text-(--kalshi-teal) font-medium mr-1.5">Kalshi</span><span className="text-(--text-secondary)">{opp.kalshi_question}</span></p>
+          )}
+        </div>
+      )}
+
       {/* Date mismatch warning */}
       {mismatch && (
         <div className="flex items-start gap-2 bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-3 mb-5 text-amber-600 dark:text-amber-400">

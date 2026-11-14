@@ -109,6 +109,7 @@ def fetch_kalshi_markets() -> list:
                 markets.append(SimpleNamespace(
                     market_id=raw["ticker"],
                     title=event.get("title", ""),
+                    question=raw.get("title", ""),
                     outcomes=[yes, no],
                     yes=yes,
                     no=no,
@@ -155,6 +156,7 @@ def parse_poly_market(m: dict) -> dict:
         "market_id":    str(m.get("id", "")),
         "parent":       parent.strip(),
         "outcome_label": outcome_label or parent,
+        "question":     m.get("question", ""),
         "price":        price,
     }
 
@@ -171,6 +173,7 @@ def parse_kalshi_market(m) -> dict:
         "market_id":    m.market_id,
         "parent":       m.title.strip(),
         "outcome_label": outcome_label or m.title,
+        "question":     getattr(m, "question", "") or m.title,
         "price":        m.yes.price if hasattr(m, "yes") and m.yes else None,
     }
 
@@ -237,14 +240,14 @@ df_kalshi = pd.DataFrame(kalshi_parsed)
 poly_events = (
     df_poly
     .groupby("parent")
-    .agg(outcomes=("market_id", list), labels=("outcome_label", list))
+    .agg(outcomes=("market_id", list), labels=("outcome_label", list), questions=("question", list))
     .reset_index()
 )
 
 kalshi_events = (
     df_kalshi
     .groupby("parent")
-    .agg(outcomes=("market_id", list), labels=("outcome_label", list))
+    .agg(outcomes=("market_id", list), labels=("outcome_label", list), questions=("question", list))
     .reset_index()
 )
 
@@ -316,6 +319,31 @@ def labels_compatible(a: str, b: str) -> bool:
         return False
     return True
 
+_SUPERLATIVE_RE = re.compile(r"\b(?:most|fewest|highest|lowest|leader|top|first|last|#\s?1|number one|winner)\b", re.I)
+
+def _question_shape(s: str) -> str:
+    if _RANGE_RE.search(s): return "range"
+    if _THRESH_RE.search(s) or re.search(r"\d\s*\+", s): return "threshold"
+    if _SUPERLATIVE_RE.search(s): return "superlative"
+    return "plain"
+
+def questions_compatible(a: str, b: str) -> bool:
+    """Full question texts: '6+ rushing touchdowns' is not 'the most rushing touchdowns'.
+    Years are checked elsewhere, so they're ignored here."""
+    # Years and season strings ("2025-26", "2026/27") are checked elsewhere and look like ranges
+    strip = lambda s: _YEAR_RE.sub(" ", re.sub(r"\b20\d\d\s*[-–/]\s*\d\d\b", " ", s))
+    a, b = strip(a), strip(b)
+    sa, sb = _question_shape(a), _question_shape(b)
+    if {sa, sb} & {"range", "threshold"} and {sa, sb} & {"superlative"}:
+        return False
+    if sa != sb and "plain" not in (sa, sb) and sa != sb:
+        if {sa, sb} == {"range", "threshold"}:
+            return False
+    na, nb = _numbers(a), _numbers(b)
+    if na != nb and ({sa, sb} & {"range", "threshold"}):
+        return False
+    return True
+
 def _settled(price) -> bool:
     """Prices at the extremes mean the market has effectively resolved; its 'gaps' are not tradable."""
     return price is not None and (price <= 0.01 or price >= 0.99)
@@ -341,6 +369,8 @@ for i, poly_event in poly_events.iterrows():
             "kalshi_outcomes": kalshi_events.iloc[best_j]["outcomes"],
             "poly_labels":     poly_event["labels"],
             "kalshi_labels":   kalshi_events.iloc[best_j]["labels"],
+            "poly_questions":  poly_event["questions"],
+            "kalshi_questions": kalshi_events.iloc[best_j]["questions"],
         })
 
 print(f"  Matched events: {len(event_matches)}")
@@ -348,9 +378,11 @@ print(f"  Matched events: {len(event_matches)}")
 
 # ── STEP 6: MATCH OUTCOMES WITHIN EACH EVENT PAIR ────────────────────────────
 
-def match_outcomes(poly_ids, poly_labels, kalshi_ids, kalshi_labels) -> list:
+def match_outcomes(poly_ids, poly_labels, kalshi_ids, kalshi_labels, poly_qs=None, kalshi_qs=None) -> list:
     if not poly_labels or not kalshi_labels:
         return []
+    poly_qs = poly_qs or [""] * len(poly_labels)
+    kalshi_qs = kalshi_qs or [""] * len(kalshi_labels)
 
     p_embs = model.encode(poly_labels,   normalize_embeddings=True)
     k_embs = model.encode(kalshi_labels, normalize_embeddings=True)
@@ -364,7 +396,7 @@ def match_outcomes(poly_ids, poly_labels, kalshi_ids, kalshi_labels) -> list:
     for pi, plabel in enumerate(poly_labels):
         for ki, klabel in enumerate(kalshi_labels):
             score = float(sim[pi][ki])
-            if score >= OUTCOME_THRESH and labels_compatible(plabel, klabel):
+            if score >= OUTCOME_THRESH and labels_compatible(plabel, klabel) and questions_compatible(poly_qs[pi], kalshi_qs[ki]):
                 cands.append((score, pi, ki))
     cands.sort(reverse=True)
     used_p, used_k, pairs = set(), set(), []
@@ -378,6 +410,8 @@ def match_outcomes(poly_ids, poly_labels, kalshi_ids, kalshi_labels) -> list:
             "kalshi_market_id": kalshi_ids[ki],
             "kalshi_label":     kalshi_labels[ki],
             "outcome_score":    round(score, 4),
+            "poly_question":    poly_qs[pi],
+            "kalshi_question":  kalshi_qs[ki],
         })
     return pairs
 
@@ -389,6 +423,7 @@ for ev in event_matches:
     outcome_pairs = match_outcomes(
         ev["poly_outcomes"], ev["poly_labels"],
         ev["kalshi_outcomes"], ev["kalshi_labels"],
+        ev["poly_questions"], ev["kalshi_questions"],
     )
     for op in outcome_pairs:
         pp = poly_price_map.get(str(op["poly_market_id"]), {})
@@ -402,6 +437,8 @@ for ev in event_matches:
             "kalshi_market_id": op["kalshi_market_id"],
             "kalshi_label":     op["kalshi_label"],
             "outcome_score":    op["outcome_score"],
+            "poly_question":    op.get("poly_question", ""),
+            "kalshi_question":  op.get("kalshi_question", ""),
             "poly_yes_ask":     pp.get("yes_ask"),
             "poly_no_ask":      pp.get("no_ask"),
             "poly_url":         pp.get("url"),
@@ -421,8 +458,16 @@ before = len(df_out)
 def _row_settled(r):
     return (_settled(r.get("poly_yes_ask")) and _settled(r.get("poly_no_ask"))) or \
            (_settled(r.get("kalshi_yes_ask")) and _settled(r.get("kalshi_no_ask")))
+MAX_END_DATE_GAP_DAYS = 90  # "before 2027" and "before 2029" are different questions
+def _dates_far_apart(r):
+    try:
+        a = datetime.fromisoformat(str(r.get("poly_end_date"))[:10]); b = datetime.fromisoformat(str(r.get("kalshi_end_date"))[:10])
+        return abs((a - b).days) > MAX_END_DATE_GAP_DAYS
+    except (TypeError, ValueError):
+        return False
 if before:
     df_out = df_out[~df_out.apply(_row_settled, axis=1)]
+    df_out = df_out[~df_out.apply(_dates_far_apart, axis=1)]
     # One Kalshi market, one Polymarket market: keep the best-scoring pair when events overlap
     df_out = (df_out.sort_values(["outcome_score", "event_score"], ascending=False)
                     .drop_duplicates("kalshi_market_id").drop_duplicates("poly_market_id"))

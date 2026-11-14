@@ -7,6 +7,22 @@ export interface EngineOptions {
   minOutcomeScore: number; // pairs matched below this are never reported as arbs
 }
 
+// Venues more than this far apart on the "same" question, or settling more than this many days
+// apart, are almost always asking different questions (same rules as arbitrage.py); those pairs
+// never open arbs.
+const SUSPECT_GAP = 0.15;
+const SUSPECT_DATE_DAYS = 45;
+
+const daysApart = (a: string | null, b: string | null): number | null => {
+  if (!a || !b) return null;
+  const d = Math.abs(Date.parse(a) - Date.parse(b)) / 86_400_000;
+  return Number.isFinite(d) ? d : null;
+};
+
+/** Implied YES probability: midpoint of the YES ask and 1 − NO ask. */
+const yesProb = (q: Quote): number | null =>
+  q.yes_ask !== null && q.no_ask !== null ? (q.yes_ask + 1 - q.no_ask) / 2 : (q.yes_ask ?? (q.no_ask !== null ? 1 - q.no_ask : null));
+
 /**
  * Joins live quotes from both venues onto matched pairs and tracks arbs.
  * Emits ("pair", pair_id) when either side of a pair moves, and
@@ -113,11 +129,15 @@ export class Engine extends EventEmitter {
     const settled = (q: Quote) =>
       q.yes_ask !== null && q.no_ask !== null &&
       (q.yes_ask <= 0.01 || q.yes_ask >= 0.99) && (q.no_ask <= 0.01 || q.no_ask >= 0.99);
+    const kp = yesProb(k), pp = yesProb(p);
+    const suspect =
+      (kp !== null && pp !== null && Math.abs(kp - pp) > SUSPECT_GAP) ||
+      (daysApart(pair.poly_end_date, pair.kalshi_end_date) ?? 0) > SUSPECT_DATE_DAYS;
     const valid =
       pair.outcome_score >= this.opts.minOutcomeScore &&
       kalshiAsk !== null && polyAsk !== null &&
       kalshiAsk > 0 && kalshiAsk < 1 && polyAsk > 0 && polyAsk < 1 &&
-      !settled(k) && !settled(p);
+      !settled(k) && !settled(p) && !suspect;
     const cost = valid ? kalshiAsk! + polyAsk! : 1;
     const pct = valid ? ((1 - cost) * 100) / cost : 0;
 

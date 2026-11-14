@@ -48,6 +48,8 @@ def csv_to_json(src, dst, numeric_fields):
                         row[field] = float(row[field])
                     except (ValueError, TypeError):
                         pass
+            if row.get("suspect") in ("True", "False"):
+                row["suspect"] = row["suspect"] == "True"
             rows.append(row)
     with open(os.path.join(DATA_DIR, dst), "w") as f:
         json.dump(rows, f)
@@ -58,7 +60,7 @@ csv_to_json("matched_markets.csv", "matched_markets.json",
      "kalshi_yes_ask", "kalshi_no_ask", "poly_volume", "kalshi_volume"])
 csv_to_json("arbitrage_opportunities.csv", "arbitrage_opportunities.json",
     ["event_score", "outcome_score", "kalshi_ask", "poly_ask",
-     "gross_cost", "gross_spread", "net_profit_pct", "poly_volume", "kalshi_volume"])
+     "gross_cost", "gross_spread", "net_profit_pct", "poly_volume", "kalshi_volume", "gap_points"])
 
 import shutil as _shutil
 if os.path.exists("all_events.json"):

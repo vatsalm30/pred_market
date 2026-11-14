@@ -64,6 +64,7 @@ function ArbCard({
   const displayKalshi = liveKalshiAsk ?? opp.kalshi_ask;
   const displayPoly   = livePolyAsk   ?? opp.poly_ask;
   const afterFees     = netAfterFeesPct(opp.kalshi_ask, opp.poly_ask);
+  const suspect       = !!opp.suspect;
 
   return (
     <div className="market-card surface rounded-2xl overflow-hidden flex flex-col">
@@ -143,6 +144,11 @@ function ArbCard({
               <AlertTriangle className="w-3 h-3" /> {Math.round(diff!)}d off
             </span>
           )}
+          {suspect && (
+            <span className="flex items-center gap-0.5 text-red-500" title={`Venues disagree by ${opp.gap_points} points: probably different questions`}>
+              <AlertTriangle className="w-3 h-3" /> likely mismatch
+            </span>
+          )}
           <div className="flex items-center gap-1.5">
             <a href={opp.poly_url} target="_blank" rel="noopener noreferrer"
               aria-label="View on Polymarket"
@@ -176,6 +182,7 @@ function ArbitrageContent() {
   const [search, setSearch]   = useState(searchParams.get("event") || "");
   const [category, setCategory] = useState("All");
   const [minProfit, setMinProfit] = useState(0);
+  const [showSuspect, setShowSuspect] = useState(false);
   const [sortBy, setSortBy]   = useState<"profit" | "net" | "spread" | "match" | "date" | "volume">("profit");
   const [page, setPage]       = useState(1);
   const sentinelRef           = useRef<HTMLDivElement>(null);
@@ -184,7 +191,7 @@ function ArbitrageContent() {
     fetchArbitrageOpportunities().then((d) => { setOpps(d); setLoading(false); });
   }, []);
 
-  useEffect(() => { setPage(1); }, [search, category, minProfit, sortBy]);
+  useEffect(() => { setPage(1); }, [search, category, minProfit, sortBy, showSuspect]);
 
   const kalshiTickers = useMemo(() => [...new Set(opps.map((o) => o.kalshi_market_id))], [opps]);
   const polyIds       = useMemo(() => [...new Set(opps.map((o) => o.poly_market_id))], [opps]);
@@ -199,7 +206,7 @@ function ArbitrageContent() {
             o.poly_event.toLowerCase().includes(search.toLowerCase()) ||
             o.poly_label.toLowerCase().includes(search.toLowerCase());
           const matchCat = category === "All" || categoryFromEvent(o.poly_event) === category;
-          return matchSearch && matchCat && o.net_profit_pct >= minProfit;
+          return matchSearch && matchCat && o.net_profit_pct >= minProfit && (showSuspect || !o.suspect);
         })
         .sort((a, b) => {
           if (sortBy === "profit") return b.net_profit_pct - a.net_profit_pct;
@@ -213,8 +220,9 @@ function ArbitrageContent() {
           if (sortBy === "volume") return (b.poly_volume || 0) - (a.poly_volume || 0);
           return b.outcome_score - a.outcome_score;
         }),
-    [opps, search, category, minProfit, sortBy]
+    [opps, search, category, minProfit, sortBy, showSuspect]
   );
+  const suspectCount = useMemo(() => opps.filter((o) => o.suspect).length, [opps]);
 
   const hasMore = page * PAGE_SIZE < filtered.length;
 
@@ -228,7 +236,8 @@ function ArbitrageContent() {
     return () => obs.disconnect();
   }, [loadMore]);
 
-  const topProfit  = opps.length ? Math.max(...opps.map((o) => o.net_profit_pct)) : 0;
+  const clean      = opps.filter((o) => !o.suspect);
+  const topProfit  = clean.length ? Math.max(...clean.map((o) => o.net_profit_pct)) : 0;
   const categories = ["All", "Politics", "Sports", "Economics", "Tech", "Other"];
   const totalVol   = opps.reduce((s, o) => s + (o.poly_volume || 0), 0);
   const afterFeeCount = opps.filter((o) => netAfterFeesPct(o.kalshi_ask, o.poly_ask) > 0).length;
@@ -279,7 +288,7 @@ function ArbitrageContent() {
 
       {/* Stats */}
       <div className="flex flex-wrap gap-6 mb-8 text-sm text-(--text-secondary)">
-        <span><strong className="text-(--text-primary) font-semibold tabular-nums">{loading ? "—" : opps.length}</strong> total opportunities</span>
+        <span><strong className="text-(--text-primary) font-semibold tabular-nums">{loading ? "—" : clean.length}</strong> opportunities</span>
         <span title={FEE_NOTE}><strong className="text-(--text-primary) font-semibold tabular-nums">{loading ? "—" : afterFeeCount}</strong> still profitable after est. fees</span>
         <span><strong className="text-(--arb-amber) font-semibold tabular-nums">{loading ? "—" : topProfit.toFixed(0)}%</strong> highest profit*</span>
         {(loading || totalVol > 0) && (
@@ -348,8 +357,14 @@ function ArbitrageContent() {
       </div>
 
       {!loading && (
-        <p className="text-(--text-muted) text-xs mb-5">
-          {Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} opportunities
+        <p className="text-(--text-muted) text-xs mb-5 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span>{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} opportunities</span>
+          {suspectCount > 0 && (
+            <label className="inline-flex items-center gap-1.5 cursor-pointer" title="Pairs where the two venues disagree by more than 15 points or settle more than 45 days apart. They are almost always two different questions, not free money.">
+              <input type="checkbox" checked={showSuspect} onChange={(e) => setShowSuspect(e.target.checked)} />
+              show {suspectCount} likely mismatched
+            </label>
+          )}
         </p>
       )}
 

@@ -60,6 +60,7 @@ function card(o) {
 const arbs = JSON.parse(fs.readFileSync(path.join(ROOT, "public", "data", "arbitrage_opportunities.json"), "utf8"));
 const best = new Map();
 for (const o of arbs) {
+  if (o.suspect) continue; // don't advertise gaps that are probably two different questions
   const cur = best.get(o.kalshi_market_id);
   if (!cur || o.net_profit_pct > cur.net_profit_pct) best.set(o.kalshi_market_id, o);
 }

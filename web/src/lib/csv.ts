@@ -44,6 +44,10 @@ export interface ArbitrageOpportunity {
   event_icon?: string;
   poly_volume?: number;
   kalshi_volume?: number;
+  gap_points?: number;      // how far apart the venues' implied probabilities are
+  suspect?: boolean;        // gap so large the two markets are probably different questions
+  poly_question?: string;
+  kalshi_question?: string;
 }
 
 export interface GroupedMarket {
