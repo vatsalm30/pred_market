@@ -10,7 +10,7 @@ COPY --from=node /usr/local/bin/node /usr/local/bin/node
 # CPU-only torch keeps the image ~2 GB smaller than the default CUDA build
 RUN pip install --no-cache-dir torch==2.12.0 --index-url https://download.pytorch.org/whl/cpu
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt google-cloud-storage==3.4.1 boto3==1.40.61
+RUN pip install --no-cache-dir -r requirements.txt google-cloud-storage==3.4.1 boto3==1.40.61 anthropic==2.8.0
 
 # Bake the embedding model into the image so each run doesn't download it
 ENV HF_HOME=/opt/hf

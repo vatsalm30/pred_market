@@ -16,7 +16,7 @@ APP_DIR = "/opt/app"
 WORK = "/tmp/work"
 REPO = os.environ["GITHUB_REPO"]      # owner/name
 DATA_BRANCH = os.environ.get("GITHUB_DATA_BRANCH", "data")
-STATE_FILES = ["matched_markets.csv"]
+STATE_FILES = ["matched_markets.csv", "pair_verdicts.json"]
 
 
 def main(mode):

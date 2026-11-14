@@ -29,6 +29,8 @@ full_mode = "--full" in sys.argv
 if full_mode:
     print("=== FULL MODE: market rediscovery + prices ===")
     run_with_retry([sys.executable, "matcher.py"])
+    # Ask Claude whether each new pair is really the same question (cached per pair)
+    run_with_retry([sys.executable, "verify_pairs.py"])
 else:
     print("=== PRICE REFRESH MODE ===")
     if not os.path.exists("matched_markets.csv"):
@@ -38,10 +40,12 @@ else:
 run_with_retry([sys.executable, "fetch_prices.py"])
 run_with_retry([sys.executable, "arbitrage.py"])
 
-def csv_to_json(src, dst, numeric_fields):
+def csv_to_json(src, dst, numeric_fields, drop=()):
     rows = []
     with open(src) as f:
         for row in csv.DictReader(f):
+            for field in drop:
+                row.pop(field, None)
             for field in numeric_fields:
                 if field in row and row[field] != "":
                     try:
@@ -57,7 +61,8 @@ def csv_to_json(src, dst, numeric_fields):
 
 csv_to_json("matched_markets.csv", "matched_markets.json",
     ["event_score", "outcome_score", "poly_yes_ask", "poly_no_ask",
-     "kalshi_yes_ask", "kalshi_no_ask", "poly_volume", "kalshi_volume"])
+     "kalshi_yes_ask", "kalshi_no_ask", "poly_volume", "kalshi_volume"],
+    drop=("poly_rules", "kalshi_rules"))  # long texts only the verifier needs
 csv_to_json("arbitrage_opportunities.csv", "arbitrage_opportunities.json",
     ["event_score", "outcome_score", "kalshi_ask", "poly_ask",
      "gross_cost", "gross_spread", "net_profit_pct", "poly_volume", "kalshi_volume", "gap_points"])

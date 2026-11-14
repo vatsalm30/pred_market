@@ -48,6 +48,8 @@ export interface ArbitrageOpportunity {
   suspect?: boolean;        // gap so large the two markets are probably different questions
   poly_question?: string;
   kalshi_question?: string;
+  llm_verdict?: string;     // same | unsure | different, from the LLM check in the pipeline
+  llm_note?: string;        // its one-sentence explanation
 }
 
 export interface GroupedMarket {

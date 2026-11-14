@@ -57,6 +57,8 @@ interface MatchedRow {
   poly_url: string; kalshi_url: string; event_icon?: string;
   poly_end_date?: string; kalshi_end_date?: string;
   event_score: number; outcome_score: number;
+  poly_question?: string; kalshi_question?: string;
+  llm_verdict?: string; llm_note?: string;
 }
 
 interface PairEntry {
@@ -233,6 +235,7 @@ export default function ArbDetailClient({ slug }: { slug: string }) {
           {opp.kalshi_question && (
             <p className="text-xs"><span className="text-(--kalshi-teal) font-medium mr-1.5">Kalshi</span><span className="text-(--text-secondary)">{opp.kalshi_question}</span></p>
           )}
+          {opp.llm_note && <VerifierNote verdict={opp.llm_verdict} note={opp.llm_note} />}
         </div>
       )}
 
@@ -359,6 +362,18 @@ export default function ArbDetailClient({ slug }: { slug: string }) {
   );
 }
 
+/** The pipeline asks Claude whether the two markets really settle on the same outcome. */
+function VerifierNote({ verdict, note }: { verdict?: string; note: string }) {
+  const tone = verdict === "same" ? "text-emerald-600 dark:text-emerald-400" : verdict === "different" ? "text-red-500" : "text-amber-600 dark:text-amber-400";
+  const label = verdict === "same" ? "Checked: same question" : verdict === "different" ? "Checked: different questions" : "Checked: unclear";
+  return (
+    <p className="text-xs pt-1 border-t border-(--border-subtle)">
+      <span className={`font-medium mr-1.5 ${tone}`}>{label}</span>
+      <span className="text-(--text-secondary)">{note}</span>
+    </p>
+  );
+}
+
 /** A matched market with no open gap right now: prices, history and watch controls. */
 function PairView({ row, pairId, eventId }: { row: MatchedRow; pairId: string; eventId: string | null }) {
   const c = (v: number | null) => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(1)}¢`);
@@ -400,6 +415,15 @@ function PairView({ row, pairId, eventId }: { row: MatchedRow; pairId: string; e
         <StatBox label="Resolves" value={fmtDate(row.poly_end_date)} sub={row.kalshi_end_date && row.kalshi_end_date !== row.poly_end_date ? `Kalshi: ${fmtDate(row.kalshi_end_date)}` : undefined} />
         <StatBox label="Match Score" value={`${Math.round(row.outcome_score * 100)}%`} sub={`Event: ${Math.round(row.event_score * 100)}%`} />
       </div>
+
+      {(row.poly_question || row.kalshi_question) && (
+        <div className="surface rounded-xl px-4 py-3.5 mb-5 space-y-2">
+          <p className="text-[10px] text-(--text-muted) uppercase tracking-widest font-medium">Exact questions</p>
+          {row.poly_question && <p className="text-xs"><span className="text-[#1652F0] dark:text-[#5b8df8] font-medium mr-1.5">Poly</span><span className="text-(--text-secondary)">{row.poly_question}</span></p>}
+          {row.kalshi_question && <p className="text-xs"><span className="text-(--kalshi-teal) font-medium mr-1.5">Kalshi</span><span className="text-(--text-secondary)">{row.kalshi_question}</span></p>}
+          {row.llm_note && <VerifierNote verdict={row.llm_verdict} note={row.llm_note} />}
+        </div>
+      )}
 
       <div className="space-y-5 mb-5">
         <PriceChart pairId={pairId} />

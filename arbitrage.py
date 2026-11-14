@@ -54,6 +54,8 @@ class Opportunity:
     suspect: bool          # gap_points above SUSPECT_GAP_POINTS: probably not the same question
     poly_question: str
     kalshi_question: str
+    llm_verdict: str       # same | unsure | different | "" (not judged)
+    llm_note: str          # one sentence on how the two markets differ, from the verifier
 
     @property
     def is_strong(self) -> bool:
@@ -134,9 +136,12 @@ def find_arbitrage_opportunities(matches: List[Dict]) -> List[Opportunity]:
                     kalshi_volume    = float(m.get("kalshi_volume",   0)  or 0),
                     gap_points       = gap_points,
                     suspect          = gap_points > SUSPECT_GAP_POINTS
-                                       or ((_days_apart(m.get("poly_end_date"), m.get("kalshi_end_date")) or 0) > SUSPECT_DATE_DAYS),
+                                       or ((_days_apart(m.get("poly_end_date"), m.get("kalshi_end_date")) or 0) > SUSPECT_DATE_DAYS)
+                                       or str(m.get("llm_verdict", "") or "") in ("unsure", "different"),
                     poly_question    = str(m.get("poly_question",   "") or ""),
                     kalshi_question  = str(m.get("kalshi_question", "") or ""),
+                    llm_verdict      = str(m.get("llm_verdict", "") or ""),
+                    llm_note         = str(m.get("llm_note", "") or ""),
                 )
             )
 

@@ -110,6 +110,7 @@ def fetch_kalshi_markets() -> list:
                     market_id=raw["ticker"],
                     title=event.get("title", ""),
                     question=raw.get("title", ""),
+                    rules=(raw.get("rules_primary") or "")[:900],
                     outcomes=[yes, no],
                     yes=yes,
                     no=no,
@@ -157,6 +158,7 @@ def parse_poly_market(m: dict) -> dict:
         "parent":       parent.strip(),
         "outcome_label": outcome_label or parent,
         "question":     m.get("question", ""),
+        "rules":        (m.get("description") or "")[:900],
         "price":        price,
     }
 
@@ -174,6 +176,7 @@ def parse_kalshi_market(m) -> dict:
         "parent":       m.title.strip(),
         "outcome_label": outcome_label or m.title,
         "question":     getattr(m, "question", "") or m.title,
+        "rules":        getattr(m, "rules", ""),
         "price":        m.yes.price if hasattr(m, "yes") and m.yes else None,
     }
 
@@ -240,14 +243,14 @@ df_kalshi = pd.DataFrame(kalshi_parsed)
 poly_events = (
     df_poly
     .groupby("parent")
-    .agg(outcomes=("market_id", list), labels=("outcome_label", list), questions=("question", list))
+    .agg(outcomes=("market_id", list), labels=("outcome_label", list), questions=("question", list), rules=("rules", list))
     .reset_index()
 )
 
 kalshi_events = (
     df_kalshi
     .groupby("parent")
-    .agg(outcomes=("market_id", list), labels=("outcome_label", list), questions=("question", list))
+    .agg(outcomes=("market_id", list), labels=("outcome_label", list), questions=("question", list), rules=("rules", list))
     .reset_index()
 )
 
@@ -371,6 +374,8 @@ for i, poly_event in poly_events.iterrows():
             "kalshi_labels":   kalshi_events.iloc[best_j]["labels"],
             "poly_questions":  poly_event["questions"],
             "kalshi_questions": kalshi_events.iloc[best_j]["questions"],
+            "poly_rules":      poly_event["rules"],
+            "kalshi_rules":    kalshi_events.iloc[best_j]["rules"],
         })
 
 print(f"  Matched events: {len(event_matches)}")
@@ -378,11 +383,13 @@ print(f"  Matched events: {len(event_matches)}")
 
 # ── STEP 6: MATCH OUTCOMES WITHIN EACH EVENT PAIR ────────────────────────────
 
-def match_outcomes(poly_ids, poly_labels, kalshi_ids, kalshi_labels, poly_qs=None, kalshi_qs=None) -> list:
+def match_outcomes(poly_ids, poly_labels, kalshi_ids, kalshi_labels, poly_qs=None, kalshi_qs=None, poly_rules=None, kalshi_rules=None) -> list:
     if not poly_labels or not kalshi_labels:
         return []
     poly_qs = poly_qs or [""] * len(poly_labels)
     kalshi_qs = kalshi_qs or [""] * len(kalshi_labels)
+    poly_rules = poly_rules or [""] * len(poly_labels)
+    kalshi_rules = kalshi_rules or [""] * len(kalshi_labels)
 
     p_embs = model.encode(poly_labels,   normalize_embeddings=True)
     k_embs = model.encode(kalshi_labels, normalize_embeddings=True)
@@ -412,6 +419,8 @@ def match_outcomes(poly_ids, poly_labels, kalshi_ids, kalshi_labels, poly_qs=Non
             "outcome_score":    round(score, 4),
             "poly_question":    poly_qs[pi],
             "kalshi_question":  kalshi_qs[ki],
+            "poly_rules":       poly_rules[pi],
+            "kalshi_rules":     kalshi_rules[ki],
         })
     return pairs
 
@@ -424,6 +433,7 @@ for ev in event_matches:
         ev["poly_outcomes"], ev["poly_labels"],
         ev["kalshi_outcomes"], ev["kalshi_labels"],
         ev["poly_questions"], ev["kalshi_questions"],
+        ev["poly_rules"], ev["kalshi_rules"],
     )
     for op in outcome_pairs:
         pp = poly_price_map.get(str(op["poly_market_id"]), {})
@@ -439,6 +449,8 @@ for ev in event_matches:
             "outcome_score":    op["outcome_score"],
             "poly_question":    op.get("poly_question", ""),
             "kalshi_question":  op.get("kalshi_question", ""),
+            "poly_rules":       op.get("poly_rules", ""),
+            "kalshi_rules":     op.get("kalshi_rules", ""),
             "poly_yes_ask":     pp.get("yes_ask"),
             "poly_no_ask":      pp.get("no_ask"),
             "poly_url":         pp.get("url"),
