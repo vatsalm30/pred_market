@@ -41,6 +41,16 @@ export async function markWhaleSeen(id: string): Promise<void> {
   );
 }
 
+/** Timestamp (unix seconds) of the newest Polymarket whale trade already saved. */
+export async function getWhaleWatermark(): Promise<number> {
+  const res = await db().send(new GetCommand({ TableName: TABLE, Key: { pk: "meta", sk: "whale_watermark" } }));
+  return (res.Item?.ts as number | undefined) ?? Math.floor(Date.now() / 1000) - 3600;
+}
+
+export async function setWhaleWatermark(ts: number): Promise<void> {
+  await db().send(new PutCommand({ TableName: TABLE, Item: { pk: "meta", sk: "whale_watermark", ts } }));
+}
+
 export async function getRecentWhales(limit = 50): Promise<WhaleTrade[]> {
   try {
     const res = await db().send(
@@ -56,20 +66,6 @@ export async function getRecentWhales(limit = 50): Promise<WhaleTrade[]> {
   } catch {
     return [];
   }
-}
-
-export async function cacheMarket(conditionId: string, info: { title: string; slug?: string }): Promise<void> {
-  await db().send(
-    new PutCommand({
-      TableName: TABLE,
-      Item: { pk: `whalemkt#${conditionId}`, sk: "_", ttl: nowSec() + 24 * 3600, data: info },
-    })
-  );
-}
-
-export async function getCachedMarket(conditionId: string): Promise<{ title: string; slug?: string } | null> {
-  const res = await db().send(new GetCommand({ TableName: TABLE, Key: { pk: `whalemkt#${conditionId}`, sk: "_" } }));
-  return isLive(res.Item) ? (res.Item!.data as { title: string; slug?: string }) : null;
 }
 
 function escapeHtml(s: string): string {

@@ -9,7 +9,7 @@ import { DynamoDBDocumentClient, PutCommand, QueryCommand } from "@aws-sdk/lib-d
 //   blog / <slug>, news / <slug>  posts, `score` = publish time in ms
 //   whale / <ts>#<id>             whale trades (ttl)
 //   whaleseen#<id> / _            whale dedupe marker (ttl)
-//   whalemkt#<conditionId> / _    market title cache (ttl)
+//   meta / whale_watermark        newest whale trade already saved
 //   apikey, apisub, apireveal, userkey#<userId>   data stream API keys (apikeys.ts)
 //   user, userlogin#<provider>, useremail       accounts (users.ts)
 //   usage#<label> / <date>, live / <label>      stream usage reported by ws-proxy (usage.ts)

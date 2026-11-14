@@ -1,77 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getSubscriberIds,
-  removeSubscriber,
-  markSeen,
-  formatAlert,
-  oppKey,
-  sendMessage,
-  recordAlerts,
-  setLastScan,
-} from "@/lib/bot";
-import { findLiveOpportunities } from "@/lib/arbitrage";
+import { getSubscriberIds, formatAlert, sendMessage } from "@/lib/bot";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
-
-const MIN_PROFIT_PCT = 2.0;
-const MAX_ALERTS_PER_RUN = 5;
-
-async function runScan() {
-  const scan = await findLiveOpportunities();
-  const actionable = scan.opportunities.filter((o) => o.net_profit_pct >= MIN_PROFIT_PCT);
-
-  const newOpps = [];
-  for (const o of actionable) {
-    if (await markSeen(oppKey(o))) newOpps.push(o);
-  }
-
-  await setLastScan();
-
-  if (newOpps.length === 0) {
-    return {
-      sent: 0,
-      stats: scan.stats,
-      total_opps: scan.opportunities.length,
-      actionable: actionable.length,
-    };
-  }
-
-  const toSend = newOpps
-    .sort((a, b) => b.net_profit_pct - a.net_profit_pct)
-    .slice(0, MAX_ALERTS_PER_RUN);
-
-  await recordAlerts(toSend);
-
-  const subscribers = await getSubscriberIds();
-  if (subscribers.length === 0) {
-    return { sent: 0, new_opps: newOpps.length, subscribers: 0, stats: scan.stats };
-  }
-
-  let sent = 0;
-  const blocked: number[] = [];
-  for (const sub of subscribers) {
-    for (const opp of toSend) {
-      const ok = await sendMessage(sub, formatAlert(opp));
-      if (!ok) {
-        blocked.push(sub);
-        break;
-      }
-      sent++;
-    }
-  }
-  await Promise.all(blocked.map((id) => removeSubscriber(id)));
-
-  return {
-    sent,
-    new_opps: newOpps.length,
-    alerted: toSend.length,
-    subscribers: subscribers.length,
-    removed_blocked: blocked.length,
-    stats: scan.stats,
-    total_opps: scan.opportunities.length,
-  };
-}
 
 async function sendTestAlert() {
   const subs = await getSubscriberIds();
@@ -104,26 +34,18 @@ async function sendTestAlert() {
 }
 
 /**
- * Bearer-token trigger. Called on schedule by the AWS scheduler Lambda,
- * and manually for testing (?test=true).
+ * Bearer-token trigger, still called on schedule by the AWS scheduler Lambda.
+ * Arbitrage alerts now come from the live stream (/api/stream/alerts): scanning every
+ * market's prices here needs more outbound requests than a Worker may make. ?test=true
+ * still sends a sample alert to every subscriber.
  */
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const auth = req.headers.get("authorization");
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-
-  const { searchParams } = new URL(req.url);
-  if (searchParams.get("test") === "true") {
+  if (new URL(req.url).searchParams.get("test") === "true") {
     return NextResponse.json(await sendTestAlert());
   }
-
-  try {
-    return NextResponse.json(await runScan());
-  } catch (e) {
-    return NextResponse.json(
-      { error: "Live scan failed", message: (e as Error).message },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({ ok: true, note: "alerts are sent from the live stream" });
 }

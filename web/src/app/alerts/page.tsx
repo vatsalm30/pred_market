@@ -72,7 +72,7 @@ export default function AlertsPage() {
         <div className="animate-in">
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-(--bg-subtle) mb-5">
             <span className="w-1.5 h-1.5 rounded-full bg-(--kalshi-teal) live-dot" />
-            <span className="text-[10px] uppercase tracking-widest text-(--text-muted) font-medium">Live · scans every 10 min</span>
+            <span className="text-[10px] uppercase tracking-widest text-(--text-muted) font-medium">Live · watches prices in real time</span>
           </div>
           <div className="flex items-center gap-3 mb-4">
             <TelegramLogo size={44} />

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  saveWhaleTrade, isWhaleSeen, markWhaleSeen,
-  cacheMarket, formatWhaleAlert,
-  type WhaleTrade,
+  saveWhaleTrade, isWhaleSeen, markWhaleSeen, getWhaleWatermark, setWhaleWatermark,
+  formatWhaleAlert, type WhaleTrade,
 } from "@/lib/whale";
 import { getSubscriberIds, sendMessage, removeSubscriber } from "@/lib/bot";
 
@@ -11,107 +10,67 @@ export const maxDuration = 30;
 
 const WHALE_THRESHOLD_USD = parseFloat(process.env.WHALE_THRESHOLD_USD ?? "10000");
 
-interface GammaMarket {
-  conditionId: string;
-  question: string;
-  slug?: string;
-}
-
-interface CLOBTrade {
-  id: string;
-  market: string;
-  asset_id: string;
+interface DataApiTrade {
+  proxy_wallet: string;
   side: "BUY" | "SELL";
-  size: string;
-  price: string;
+  token_id: string;
+  condition_id: string;
+  size: number;
+  price: number;
+  timestamp: number; // unix seconds
+  title: string;
+  event_slug?: string;
   outcome?: string;
-  owner?: string;
-  maker_address?: string;
   transaction_hash?: string;
-  match_time: string;
 }
 
-async function getTopMarkets(): Promise<GammaMarket[]> {
-  try {
-    const r = await fetch(
-      "https://gamma-api.polymarket.com/markets?limit=25&order=volumeNum&ascending=false&active=true",
-      { cache: "no-store" }
-    );
-    if (!r.ok) return [];
-    const data = await r.json();
-    const markets: GammaMarket[] = Array.isArray(data) ? data : (data.markets ?? []);
-    return markets.filter((m) => m.conditionId && m.question);
-  } catch {
-    return [];
-  }
-}
+const MAX_NEW_PER_RUN = 20; // Workers allow 50 outbound requests per invocation
 
-async function fetchCLOBTrades(conditionId: string): Promise<CLOBTrade[]> {
-  try {
-    const r = await fetch(
-      `https://clob.polymarket.com/trades?market=${conditionId}&limit=50`,
-      { cache: "no-store" }
-    );
-    if (!r.ok) return [];
-    const data = await r.json();
-    return Array.isArray(data) ? data : (data.data ?? []);
-  } catch {
-    return [];
-  }
+// Polymarket's public data API returns recent trades over a cash threshold across every market
+// in one request (the CLOB /trades endpoint now needs an API key).
+async function fetchLargeTrades(): Promise<DataApiTrade[]> {
+  const url = `https://data-api.polymarket.com/v2/trades?limit=50&filter_type=CASH&filter_amount=${WHALE_THRESHOLD_USD}`;
+  const r = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(10_000) });
+  if (!r.ok) throw new Error(`Polymarket trades: HTTP ${r.status}`);
+  return ((await r.json()) as { data?: DataApiTrade[] }).data ?? [];
 }
 
 async function trackWhales(): Promise<{ found: number; alerted: number }> {
-  const markets = await getTopMarkets();
-  if (markets.length === 0) return { found: 0, alerted: 0 };
-
-  for (const m of markets) {
-    await cacheMarket(m.conditionId, { title: m.question, slug: m.slug });
-  }
+  const trades = await fetchLargeTrades();
+  const since = await getWhaleWatermark();
+  const fresh = trades
+    .filter((t) => t.timestamp >= since && t.size * t.price >= WHALE_THRESHOLD_USD)
+    .sort((a, b) => a.timestamp - b.timestamp)
+    .slice(-MAX_NEW_PER_RUN);
 
   const newWhales: WhaleTrade[] = [];
-
-  for (let i = 0; i < markets.length; i += 5) {
-    const batch = markets.slice(i, i + 5);
-    const tradeArrays = await Promise.all(batch.map((m) => fetchCLOBTrades(m.conditionId)));
-
-    for (let j = 0; j < batch.length; j++) {
-      const market = batch[j];
-      for (const t of tradeArrays[j]) {
-        const size = parseFloat(t.size);
-        const price = parseFloat(t.price);
-        if (isNaN(size) || isNaN(price)) continue;
-
-        const usdValue = size * price;
-        if (usdValue < WHALE_THRESHOLD_USD) continue;
-        if (await isWhaleSeen(t.id)) continue;
-
-        let ts = parseFloat(t.match_time);
-        if (ts > 1e12) ts = Math.floor(ts / 1000);
-
-        const trade: WhaleTrade = {
-          id: t.id,
-          marketTitle: market.question,
-          marketSlug: market.slug,
-          conditionId: market.conditionId,
-          assetId: t.asset_id,
-          outcome: t.outcome ?? "Yes",
-          side: t.side,
-          size,
-          price,
-          usdValue,
-          traderAddress: t.owner ?? t.maker_address ?? "0x???",
-          txHash: t.transaction_hash,
-          timestamp: ts || Math.floor(Date.now() / 1000),
-        };
-
-        await saveWhaleTrade(trade);
-        await markWhaleSeen(t.id);
-        newWhales.push(trade);
-      }
-    }
+  for (const t of fresh) {
+    const id = `${t.transaction_hash ?? t.timestamp}:${t.token_id.slice(-12)}:${t.side}:${t.size}`;
+    // Trades in the watermark's own second may have been saved last run
+    if (t.timestamp === since && (await isWhaleSeen(id))) continue;
+    const trade: WhaleTrade = {
+      id,
+      venue: "polymarket",
+      marketTitle: t.title,
+      marketSlug: t.event_slug,
+      conditionId: t.condition_id,
+      assetId: t.token_id,
+      outcome: t.outcome ?? "Yes",
+      side: t.side,
+      size: t.size,
+      price: t.price,
+      usdValue: t.size * t.price,
+      traderAddress: t.proxy_wallet,
+      txHash: t.transaction_hash,
+      timestamp: t.timestamp,
+    };
+    await saveWhaleTrade(trade);
+    if (t.timestamp === fresh[fresh.length - 1].timestamp) await markWhaleSeen(id);
+    newWhales.push(trade);
   }
+  if (fresh.length) await setWhaleWatermark(fresh[fresh.length - 1].timestamp);
 
-  const toAlert = [...newWhales].sort((a, b) => b.usdValue - a.usdValue).slice(0, 5);
+  const toAlert = [...newWhales].sort((a, b) => b.usdValue - a.usdValue).slice(0, 3);
   let alerted = 0;
 
   if (toAlert.length > 0) {
