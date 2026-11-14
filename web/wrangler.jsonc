@@ -18,6 +18,7 @@
     "OMNIPRED_AWS_REGION": "us-east-1",
     "ADMIN_EMAILS": "vatsalm30@gmail.com",
     "CF_ANALYTICS_ACCOUNT_ID": "7bc657daf676bbda28aa076228c1e75f",
-    "CF_ANALYTICS_ZONE_ID": "702b12ed3f40e4fb8f3ffe51e3a18fa3"
+    "CF_ANALYTICS_ZONE_ID": "702b12ed3f40e4fb8f3ffe51e3a18fa3",
+    "CF_WEB_ANALYTICS_SITE_TAG": "48c923ee14df4c91902a71e5122e320e"
   }
 }
