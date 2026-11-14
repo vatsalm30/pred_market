@@ -62,6 +62,13 @@ class Opportunity:
         return self.net_profit_pct >= 3.0
 
 
+def _text(v) -> str:
+    """Empty CSV cells arrive from pandas as NaN; never let 'nan' reach the site."""
+    if v is None or (isinstance(v, float) and v != v):
+        return ""
+    return str(v)
+
+
 def find_arbitrage_opportunities(matches: List[Dict]) -> List[Opportunity]:
     opportunities: List[Opportunity] = []
 
@@ -137,11 +144,11 @@ def find_arbitrage_opportunities(matches: List[Dict]) -> List[Opportunity]:
                     gap_points       = gap_points,
                     suspect          = gap_points > SUSPECT_GAP_POINTS
                                        or ((_days_apart(m.get("poly_end_date"), m.get("kalshi_end_date")) or 0) > SUSPECT_DATE_DAYS)
-                                       or str(m.get("llm_verdict", "") or "") in ("unsure", "different"),
-                    poly_question    = str(m.get("poly_question",   "") or ""),
-                    kalshi_question  = str(m.get("kalshi_question", "") or ""),
-                    llm_verdict      = str(m.get("llm_verdict", "") or ""),
-                    llm_note         = str(m.get("llm_note", "") or ""),
+                                       or _text(m.get("llm_verdict")) in ("unsure", "different"),
+                    poly_question    = _text(m.get("poly_question")),
+                    kalshi_question  = _text(m.get("kalshi_question")),
+                    llm_verdict      = _text(m.get("llm_verdict")),
+                    llm_note         = _text(m.get("llm_note")),
                 )
             )
 
