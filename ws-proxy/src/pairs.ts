@@ -28,7 +28,8 @@ async function fetchPolyTokens(ids: string[]): Promise<Map<string, [string, stri
   const worker = async () => {
     for (let batch = batches.shift(); batch; batch = batches.shift()) {
       try {
-        const res = await fetch(`${GAMMA_URL}?${batch.map((id) => `id=${id}`).join("&")}`);
+        // Gamma pages at 20 unless told otherwise, which silently dropped 60% of each batch
+        const res = await fetch(`${GAMMA_URL}?${batch.map((id) => `id=${id}`).join("&")}&limit=${GAMMA_BATCH * 2}`);
         if (!res.ok) continue;
         for (const m of (await res.json()) as any[]) {
           if (m.closed || !m.clobTokenIds) continue;

@@ -371,8 +371,8 @@ function ArbitrageContent() {
               <ArbCard
                 key={i}
                 opp={opp}
-                liveKalshiAsk={liveKalshi.get(opp.kalshi_market_id)?.yes_ask}
-                livePolyAsk={livePoly.get(opp.poly_market_id)}
+                liveKalshiAsk={liveKalshi.get(opp.kalshi_market_id)?.[opp.kalshi_leg === "NO" ? "no_ask" : "yes_ask"]}
+                livePolyAsk={livePoly.get(opp.poly_market_id)?.[opp.poly_leg === "NO" ? "no_ask" : "yes_ask"]}
               />
             ))}
           </div>

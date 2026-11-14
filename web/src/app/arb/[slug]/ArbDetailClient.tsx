@@ -121,7 +121,7 @@ export default function ArbDetailClient({ slug }: { slug: string }) {
   const liveKalshiAsk = opp.kalshi_leg === "YES"
     ? liveKalshi.get(opp.kalshi_market_id)?.yes_ask
     : liveKalshi.get(opp.kalshi_market_id)?.no_ask;
-  const livePolyAsk   = livePoly.get(opp.poly_market_id);
+  const livePolyAsk   = livePoly.get(opp.poly_market_id)?.[opp.poly_leg === "NO" ? "no_ask" : "yes_ask"];
   const displayKalshi = liveKalshiAsk ?? opp.kalshi_ask;
   const displayPoly   = livePolyAsk   ?? opp.poly_ask;
   const liveSpread    = 1 - displayKalshi - displayPoly;

@@ -109,10 +109,15 @@ export class Engine extends EventEmitter {
   ) {
     const arbId = `${pair.pair_id}:${kalshiLeg}`;
     const prev = this.arbs.get(arbId);
+    // A venue quoting both sides at an extreme has effectively settled: its "gaps" can't be traded
+    const settled = (q: Quote) =>
+      q.yes_ask !== null && q.no_ask !== null &&
+      (q.yes_ask <= 0.01 || q.yes_ask >= 0.99) && (q.no_ask <= 0.01 || q.no_ask >= 0.99);
     const valid =
       pair.outcome_score >= this.opts.minOutcomeScore &&
       kalshiAsk !== null && polyAsk !== null &&
-      kalshiAsk > 0 && kalshiAsk < 1 && polyAsk > 0 && polyAsk < 1;
+      kalshiAsk > 0 && kalshiAsk < 1 && polyAsk > 0 && polyAsk < 1 &&
+      !settled(k) && !settled(p);
     const cost = valid ? kalshiAsk! + polyAsk! : 1;
     const pct = valid ? ((1 - cost) * 100) / cost : 0;
 

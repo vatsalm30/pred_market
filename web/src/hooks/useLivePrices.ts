@@ -8,9 +8,14 @@ export interface KalshiLivePrice {
   ts: number;
 }
 
+export interface PolyLivePrice {
+  yes_ask: number;
+  no_ask: number;
+}
+
 export interface UseLivePricesResult {
   kalshi: Map<string, KalshiLivePrice>;
-  poly: Map<string, number>; // poly_market_id -> YES ask price
+  poly: Map<string, PolyLivePrice>; // poly_market_id -> best asks
   connected: boolean;
   lastPolyFetch: Date | null;
 }
@@ -23,7 +28,7 @@ export function useLivePrices(
   polyMarketIds: string[]
 ): UseLivePricesResult {
   const [kalshi, setKalshi] = useState<Map<string, KalshiLivePrice>>(new Map());
-  const [poly, setPoly] = useState<Map<string, number>>(new Map());
+  const [poly, setPoly] = useState<Map<string, PolyLivePrice>>(new Map());
   const [connected, setConnected] = useState(false);
   const [lastPolyFetch, setLastPolyFetch] = useState<Date | null>(null);
 
@@ -87,34 +92,19 @@ export function useLivePrices(
 
     const fetchPoly = async () => {
       try {
-        // Gamma API supports batching via repeated id params
-        const params = polyMarketIds.map((id) => `id=${id}`).join("&");
-        const res = await fetch(`https://gamma-api.polymarket.com/markets?${params}`);
-        if (!res.ok) return;
-        const markets: Array<{
-          id: string;
-          conditionId?: string;
-          outcomePrices?: string | string[];
-          price?: number | string;
-        }> = await res.json();
-
-        const next = new Map<string, number>();
-        for (const m of markets) {
-          let yesPrice: number | null = null;
-
-          if (m.outcomePrices) {
-            // outcomePrices is sometimes a JSON-stringified array
-            const arr: string[] =
-              typeof m.outcomePrices === "string"
-                ? JSON.parse(m.outcomePrices)
-                : m.outcomePrices;
-            yesPrice = parseFloat(arr[0]);
-          } else if (m.price !== undefined) {
-            yesPrice = typeof m.price === "string" ? parseFloat(m.price) : m.price;
-          }
-
-          if (yesPrice !== null && !isNaN(yesPrice)) {
-            next.set(String(m.id), yesPrice);
+        // Gamma batches by repeated id params but pages at 20 unless a limit is given.
+        // bestAsk/bestBid are the real top of book; outcomePrices is only the midpoint.
+        const next = new Map<string, PolyLivePrice>();
+        for (let i = 0; i < polyMarketIds.length; i += 50) {
+          const params = polyMarketIds.slice(i, i + 50).map((id) => `id=${id}`).join("&");
+          const res = await fetch(`https://gamma-api.polymarket.com/markets?${params}&limit=100`);
+          if (!res.ok) continue;
+          const markets: Array<{ id: string; bestAsk?: number | string; bestBid?: number | string }> = await res.json();
+          for (const m of markets) {
+            const ask = Number(m.bestAsk), bid = Number(m.bestBid);
+            if (Number.isFinite(ask) && Number.isFinite(bid) && ask > 0 && bid > 0) {
+              next.set(String(m.id), { yes_ask: ask, no_ask: 1 - bid });
+            }
           }
         }
 

@@ -9,6 +9,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from datetime import datetime
 from types import SimpleNamespace
+from fetch_prices import poly_asks
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
@@ -40,7 +41,8 @@ def fetch_poly_events_gamma() -> list:
             for m in event.get("markets", []):
                 m["_event_title"]    = event.get("title", "")
                 m["_event_url"]      = event_url
-                m["_event_end_date"] = (event.get("endDate") or "")[:10]  # keep YYYY-MM-DD only
+                # A market's own end date; the parent event's can be far later for multi-outcome events
+                m["_event_end_date"] = (m.get("endDate") or event.get("endDate") or "")[:10]
                 m["_event_icon"]      = event.get("icon") or event.get("image") or ""
                 m["_event_volume"]    = float(event.get("volume")    or event.get("volumeNum")    or 0)
                 m["_event_volume_24h"] = float(event.get("volume24hr") or event.get("volume24hrClob") or 0)
@@ -97,8 +99,11 @@ def fetch_kalshi_markets() -> list:
                 label = _kalshi_label(raw)
                 yes = SimpleNamespace(label=label or "Yes", price=price)
                 no = SimpleNamespace(label=f"Not {label}" if label else "No", price=1 - price)
+                # expected_expiration_time is when the market should settle; expiration_time is
+                # the last date it *can* settle, often years later, so it never matched Polymarket's
                 try:
-                    resolution = datetime.fromisoformat(raw["expiration_time"].replace("Z", "+00:00"))
+                    when = raw.get("expected_expiration_time") or raw.get("close_time") or raw["expiration_time"]
+                    resolution = datetime.fromisoformat(when.replace("Z", "+00:00"))
                 except (KeyError, ValueError, AttributeError):
                     resolution = None
                 markets.append(SimpleNamespace(
@@ -187,13 +192,7 @@ def _kalshi_url(market_id: str) -> str:
     return f"https://kalshi.com/events/{event_slug}"
 
 def _poly_price_entry(m: dict) -> dict:
-    prices_raw = m.get("outcomePrices", "[]")
-    try:
-        prices = json.loads(prices_raw) if isinstance(prices_raw, str) else (prices_raw or [])
-        yes_ask = float(prices[0]) if len(prices) > 0 else None
-        no_ask  = float(prices[1]) if len(prices) > 1 else None
-    except Exception:
-        yes_ask = no_ask = None
+    yes_ask, no_ask = poly_asks(m)
     return {
         "yes_ask":    yes_ask,
         "no_ask":     no_ask,
@@ -266,11 +265,74 @@ sim_matrix = cosine_similarity(poly_embs, kalshi_embs)
 
 EVENT_THRESH = 0.75
 
+# ── Hard checks: things embeddings get wrong no matter how high the score ────
+
+_NUM_RE   = re.compile(r"(?<![\w.])[-+]?\$?\d[\d,]*(?:\.\d+)?\s*[kKmMbB%]?")
+_YEAR_RE  = re.compile(r"\b(20[2-3]\d)\b")
+_RANGE_RE = re.compile(r"\d[\d,.]*\s*[kKmM%]?\s*(?:-|–|—|to)\s*\d")
+_THRESH_RE = re.compile(r"[<>≤≥]|\b(?:at least|at most|or more|or less|or fewer|above|below|over|under|more than|less than|fewer than)\b", re.I)
+
+def _numbers(s: str) -> set:
+    """Numeric tokens as comparable values: '$150k' -> 150000, '14%' -> 14, '1,500' -> 1500."""
+    out = set()
+    for tok in _NUM_RE.findall(s.replace("−", "-")):
+        t = tok.strip().lower().replace("$", "").replace(",", "")
+        mult = 1
+        if t.endswith("k"): mult, t = 1e3, t[:-1]
+        elif t.endswith("m"): mult, t = 1e6, t[:-1]
+        elif t.endswith("b"): mult, t = 1e9, t[:-1]
+        elif t.endswith("%"): t = t[:-1]
+        try:
+            out.add(round(float(t) * mult, 6))
+        except ValueError:
+            pass
+    return out
+
+def _years(s: str) -> set:
+    return set(_YEAR_RE.findall(s))
+
+def _label_shape(s: str) -> str:
+    if _RANGE_RE.search(s): return "range"
+    if _THRESH_RE.search(s): return "threshold"
+    return "plain"
+
+def event_titles_compatible(a: str, b: str) -> bool:
+    ya, yb = _years(a), _years(b)
+    if ya and yb and ya != yb:
+        return False  # different years
+    return True
+
+def labels_compatible(a: str, b: str) -> bool:
+    """Reject outcome pairs whose numbers or shape disagree ('14-16%' vs '>=14%', '$150k' vs '$100k')."""
+    na, nb = _numbers(a), _numbers(b)
+    if na and nb:
+        if na != nb:
+            return False
+        sa, sb = _label_shape(a), _label_shape(b)
+        if sa != sb and "plain" not in (sa, sb):
+            return False  # a range and a threshold are different questions
+    ya, yb = _years(a), _years(b)
+    if ya and yb and ya != yb:
+        return False
+    return True
+
+def _settled(price) -> bool:
+    """Prices at the extremes mean the market has effectively resolved; its 'gaps' are not tradable."""
+    return price is not None and (price <= 0.01 or price >= 0.99)
+
 event_matches = []
 for i, poly_event in poly_events.iterrows():
-    best_j     = int(np.argmax(sim_matrix[i]))
-    best_score = float(sim_matrix[i][best_j])
-    if best_score >= EVENT_THRESH:
+    # Best candidate that passes the hard checks, not just the top embedding score
+    order = np.argsort(-sim_matrix[i])[:5]
+    best_j, best_score = None, 0.0
+    for j in order:
+        score = float(sim_matrix[i][j])
+        if score < EVENT_THRESH:
+            break
+        if event_titles_compatible(poly_event["parent"], kalshi_events.iloc[int(j)]["parent"]):
+            best_j, best_score = int(j), score
+            break
+    if best_j is not None:
         event_matches.append({
             "poly_event":      poly_event["parent"],
             "kalshi_event":    kalshi_events.iloc[best_j]["parent"],
@@ -295,18 +357,28 @@ def match_outcomes(poly_ids, poly_labels, kalshi_ids, kalshi_labels) -> list:
     sim    = cosine_similarity(p_embs, k_embs)
 
     OUTCOME_THRESH = 0.80
-    pairs = []
-    for pi, (pid, plabel) in enumerate(zip(poly_ids, poly_labels)):
-        best_ki    = int(np.argmax(sim[pi]))
-        best_score = float(sim[pi][best_ki])
-        if best_score >= OUTCOME_THRESH:
-            pairs.append({
-                "poly_market_id":   pid,
-                "poly_label":       plabel,
-                "kalshi_market_id": kalshi_ids[best_ki],
-                "kalshi_label":     kalshi_labels[best_ki],
-                "outcome_score":    round(best_score, 4),
-            })
+    # Every (poly, kalshi) candidate above the threshold that passes the hard checks,
+    # then greedy one-to-one assignment from the best score down, so one Kalshi market
+    # can't be claimed by several Polymarket markets (or vice versa).
+    cands = []
+    for pi, plabel in enumerate(poly_labels):
+        for ki, klabel in enumerate(kalshi_labels):
+            score = float(sim[pi][ki])
+            if score >= OUTCOME_THRESH and labels_compatible(plabel, klabel):
+                cands.append((score, pi, ki))
+    cands.sort(reverse=True)
+    used_p, used_k, pairs = set(), set(), []
+    for score, pi, ki in cands:
+        if pi in used_p or ki in used_k:
+            continue
+        used_p.add(pi); used_k.add(ki)
+        pairs.append({
+            "poly_market_id":   poly_ids[pi],
+            "poly_label":       poly_labels[pi],
+            "kalshi_market_id": kalshi_ids[ki],
+            "kalshi_label":     kalshi_labels[ki],
+            "outcome_score":    round(score, 4),
+        })
     return pairs
 
 
@@ -344,6 +416,17 @@ for ev in event_matches:
         })
 
 df_out = pd.DataFrame(rows)
+before = len(df_out)
+# Settled markets: both asks pinned to an extreme on either venue
+def _row_settled(r):
+    return (_settled(r.get("poly_yes_ask")) and _settled(r.get("poly_no_ask"))) or \
+           (_settled(r.get("kalshi_yes_ask")) and _settled(r.get("kalshi_no_ask")))
+if before:
+    df_out = df_out[~df_out.apply(_row_settled, axis=1)]
+    # One Kalshi market, one Polymarket market: keep the best-scoring pair when events overlap
+    df_out = (df_out.sort_values(["outcome_score", "event_score"], ascending=False)
+                    .drop_duplicates("kalshi_market_id").drop_duplicates("poly_market_id"))
+print(f"  Dropped {before - len(df_out)} settled or duplicate pairs")
 df_out.to_csv("matched_markets.csv", index=False)
 print(f"Written {len(df_out)} outcome-level pairs to matched_markets.csv")
 print(df_out.head(20).to_string())

@@ -35,25 +35,38 @@ def fetch_kalshi_prices(tickers: list) -> dict:
     return prices
 
 
+def poly_asks(m: dict):
+    """Best YES and NO asks for a Gamma market. outcomePrices is the midpoint, not a
+    price you can buy at; bestAsk/bestBid are the real top of book."""
+    try:
+        ask, bid = m.get("bestAsk"), m.get("bestBid")
+        if ask is not None and bid is not None:
+            return float(ask), 1 - float(bid)
+        op = m.get("outcomePrices", "[]")
+        if isinstance(op, str):
+            op = json.loads(op)
+        if op and len(op) >= 2:
+            return float(op[0]), float(op[1])
+    except (TypeError, ValueError):
+        pass
+    return None, None
+
+
 def fetch_poly_prices(market_ids: list) -> dict:
     prices = {}
     for i in range(0, len(market_ids), POLY_BATCH):
         batch = market_ids[i:i + POLY_BATCH]
         try:
-            query = "&".join(f"id={mid}" for mid in batch)
+            # Gamma pages at 20 unless told otherwise, which silently dropped 60% of each batch
+            query = "&".join(f"id={mid}" for mid in batch) + f"&limit={POLY_BATCH * 2}"
             r = requests.get(f"{POLY_GAMMA}?{query}", timeout=30)
             if not r.ok:
                 continue
             for m in r.json():
                 mid = str(m.get("id", ""))
-                op = m.get("outcomePrices", "[]")
-                if isinstance(op, str):
-                    op = json.loads(op)
-                if op and len(op) >= 2:
-                    prices[mid] = {
-                        "yes_ask": float(op[0]),
-                        "no_ask":  float(op[1]),
-                    }
+                yes_ask, no_ask = poly_asks(m)
+                if yes_ask is not None:
+                    prices[mid] = {"yes_ask": yes_ask, "no_ask": no_ask}
         except Exception as e:
             print(f"  Poly batch error: {e}")
     return prices
