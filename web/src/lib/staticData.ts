@@ -6,13 +6,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 // so the file is fetched from the static assets binding instead.
 // Large dumps are pre-split by scripts/derive-data.mjs into public/data/derived/.
 
-const SHARDS = 64; // keep in sync with scripts/derive-data.mjs
-
-export const shardOf = (id: string) => {
-  let h = 5381;
-  for (let i = 0; i < id.length; i++) h = ((h * 33) ^ id.charCodeAt(i)) >>> 0;
-  return h % SHARDS;
-};
+import { shardOf } from "./shard";
 
 const onWorkers = () => typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers";
 
@@ -41,15 +35,6 @@ export interface EventMeta {
   yes_price_kalshi: number | null;
 }
 
-export interface ArbMeta {
-  poly_label: string;
-  poly_event: string;
-  net_profit_pct: number;
-  kalshi_leg: string;
-  poly_leg: string;
-  kalshi_ask: number;
-  poly_ask: number;
-}
 
 export const getHomeStats = () => readData<HomeStats>("derived/summary.json");
 
@@ -58,7 +43,3 @@ export async function getEventMeta(id: string): Promise<EventMeta | null> {
   return shard[id] ?? null;
 }
 
-export async function getArbMeta(kalshiMarketId: string): Promise<ArbMeta | null> {
-  const all = await readData<Record<string, ArbMeta>>("derived/arbs.json");
-  return all[kalshiMarketId] ?? null;
-}

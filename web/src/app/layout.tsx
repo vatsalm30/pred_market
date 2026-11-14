@@ -11,6 +11,7 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.omnipred.com"),
   title: {
     template: "%s | OmniPred",
     default: "OmniPred — Compare Polymarket vs Kalshi Odds",

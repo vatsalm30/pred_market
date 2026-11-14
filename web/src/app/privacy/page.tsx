@@ -41,6 +41,13 @@ export default function PrivacyPage() {
           unsubscribe and we delete them.
         </li>
         <li>
+          <strong className="text-(--text-primary)">Alerts, watchlist and digest.</strong> If you set them up in your
+          dashboard we store the Discord webhook URL you give us, your minimum-profit setting, whether you want the daily
+          digest, and the markets on your watchlist with their alert thresholds. We use your account email to send watchlist
+          alerts and, if you turn it on, the daily digest. Every digest has a one-click unsubscribe link, and removing the
+          webhook or watchlist entries deletes them.
+        </li>
+        <li>
           <strong className="text-(--text-primary)">Emails you send us.</strong> If you contact us, we keep the conversation to reply.
         </li>
       </ul>
@@ -64,10 +71,12 @@ export default function PrivacyPage() {
       <ul className="list-disc pl-5 space-y-2">
         <li>Cloudflare, Inc. — website hosting, DNS, email forwarding and cookieless analytics (USA).</li>
         <li>Google and GitHub — only if you choose to sign in with them, under their own privacy policies.</li>
-        <li>Amazon Web Services — database storing accounts, API keys, usage and Telegram subscriptions (USA, us-east-1).</li>
+        <li>Amazon Web Services — database storing accounts, API keys, usage, alert settings, watchlists and Telegram subscriptions (USA, us-east-1).</li>
         <li>Fly.io — hosting for the Data Stream server (USA).</li>
         <li>Google Cloud — our market data pipeline, which processes no personal data.</li>
         <li>Telegram — delivers bot messages under its own privacy policy.</li>
+        <li>Discord — delivers alerts to the channel whose webhook you connect, under its own privacy policy.</li>
+        <li>Resend — sends alert and digest emails (USA).</li>
       </ul>
       <p>
         Pages load market images directly from Polymarket&apos;s image host, and links take you to Polymarket, Kalshi and news

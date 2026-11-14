@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Check, Copy, KeyRound, LogOut, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { STREAM_URL, REST_URL } from "@/lib/streamLimits";
+import AlertSettings from "./AlertSettings";
 
 interface UserKey {
   id: string;
@@ -463,6 +464,8 @@ ws.onmessage = (e) => console.log(JSON.parse(e.data));
 // GET ${REST_URL}/v1/pairs?api_key=${snippetKey}`}</pre>
         </section>
       </div>
+
+      <AlertSettings />
 
       {/* Account */}
       <section className="surface rounded-2xl p-5">

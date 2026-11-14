@@ -3,11 +3,10 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { ExternalLink, ArrowLeft, Calendar, Zap, ArrowUpRight, AlertTriangle, Radio } from "lucide-react";
-import {
-  fetchArbitrageOpportunities, fetchAllEvents,
-  type ArbitrageOpportunity, type AllEvent,
-  formatVolume, categoryFromEvent,
-} from "@/lib/csv";
+import { type ArbitrageOpportunity, formatVolume, categoryFromEvent } from "@/lib/csv";
+import { shardOf } from "@/lib/shard";
+import PriceChart from "@/components/PriceChart";
+import WatchPanel from "@/components/WatchPanel";
 import { PolymarketLogo, KalshiLogo } from "@/components/PlatformLogos";
 import EventIcon from "@/components/EventIcon";
 import { useLivePrices } from "@/hooks/useLivePrices";
@@ -49,23 +48,45 @@ function StatBox({
   );
 }
 
+/** A matched pair row from the pipeline (matched_markets.json). */
+interface MatchedRow {
+  poly_event: string; poly_label: string; kalshi_label: string;
+  kalshi_market_id: string; poly_market_id: string | number;
+  poly_yes_ask: number | null; poly_no_ask: number | null;
+  kalshi_yes_ask: number | null; kalshi_no_ask: number | null;
+  poly_url: string; kalshi_url: string; event_icon?: string;
+  poly_end_date?: string; kalshi_end_date?: string;
+  event_score: number; outcome_score: number;
+}
+
+interface PairEntry {
+  matched: MatchedRow[];
+  arbs: ArbitrageOpportunity[];
+  event_id: string | null;
+}
+
 export default function ArbDetailClient({ slug }: { slug: string }) {
   const decodedSlug = decodeURIComponent(slug);
 
-  const [opp, setOpp]     = useState<ArbitrageOpportunity | null>(null);
-  const [event, setEvent] = useState<AllEvent | null>(null);
+  const [entry, setEntry] = useState<PairEntry | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchArbitrageOpportunities(), fetchAllEvents()]).then(([arb, allEvents]) => {
-      const found = arb.find((o) => o.kalshi_market_id === decodedSlug);
-      setOpp(found ?? null);
-      if (found) {
-        setEvent(allEvents.find((e) => e.title === found.poly_event) ?? null);
-      }
-      setLoading(false);
-    });
+    // One ~30 KB shard instead of the full arb list and event dump
+    fetch(`/data/derived/pairs/${shardOf(decodedSlug)}.json`)
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((shard: Record<string, PairEntry>) => setEntry(shard[decodedSlug] ?? null))
+      .catch(() => setEntry(null))
+      .finally(() => setLoading(false));
   }, [decodedSlug]);
+
+  const opp = useMemo(
+    () => [...(entry?.arbs ?? [])].sort((a, b) => b.net_profit_pct - a.net_profit_pct)[0] ?? null,
+    [entry]
+  );
+  const row = entry?.matched[0] ?? null;
+  const eventId = entry?.event_id ?? null;
+  const pairId = opp ? `${opp.kalshi_market_id}:${opp.poly_market_id}` : row ? `${row.kalshi_market_id}:${row.poly_market_id}` : null;
 
   const kalshiTickers = useMemo(() => (opp ? [opp.kalshi_market_id] : []), [opp]);
   const polyIds       = useMemo(() => (opp ? [opp.poly_market_id]   : []), [opp]);
@@ -83,6 +104,8 @@ export default function ArbDetailClient({ slug }: { slug: string }) {
       </div>
     );
   }
+
+  if (!opp && row && pairId) return <PairView row={row} pairId={pairId} eventId={eventId} />;
 
   if (!opp) {
     return (
@@ -259,21 +282,24 @@ export default function ArbDetailClient({ slug }: { slug: string }) {
         </div>
       </div>
 
+      {/* History and alerts */}
+      {pairId && (
+        <div className="space-y-5 mb-5">
+          <PriceChart pairId={pairId} />
+          <WatchPanel pairId={pairId} />
+        </div>
+      )}
+
       {/* Parent event */}
-      {event && (
+      {eventId && (
         <div className="surface rounded-xl px-4 py-3.5 flex items-center gap-3 mb-5">
           <EventIcon src={opp.event_icon || null} alt={opp.poly_event} size={32} className="shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-[10px] text-(--text-muted) mb-0.5">Parent event</p>
-            <p className="text-sm text-(--text-primary) font-medium truncate">{event.title}</p>
-            {event.volume > 0 && (
-              <p className="text-[10px] text-(--text-muted) mt-0.5">
-                {formatVolume(event.volume)} total · {formatVolume(event.volume_24h)}/24h
-              </p>
-            )}
+            <p className="text-sm text-(--text-primary) font-medium truncate">{opp.poly_event}</p>
           </div>
           <Link
-            href={`/events/${encodeURIComponent(event.id)}`}
+            href={`/events/${encodeURIComponent(eventId)}`}
             className="link-arrow text-xs text-(--text-secondary) hover:text-(--text-primary) flex items-center gap-1 shrink-0"
           >
             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -307,6 +333,69 @@ export default function ArbDetailClient({ slug }: { slug: string }) {
       <Link href="/arbitrage" className="flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text-primary) transition-colors">
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Arbitrage Scanner
       </Link>
+    </div>
+  );
+}
+
+/** A matched market with no open gap right now: prices, history and watch controls. */
+function PairView({ row, pairId, eventId }: { row: MatchedRow; pairId: string; eventId: string | null }) {
+  const c = (v: number | null) => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(1)}¢`);
+  return (
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="flex items-center gap-2 text-xs text-(--text-muted) mb-6 flex-wrap">
+        <Link href="/" className="hover:text-(--text-primary) transition-colors">Home</Link>
+        <span>/</span>
+        <Link href="/arbitrage" className="hover:text-(--text-primary) transition-colors">Arbitrage</Link>
+        <span>/</span>
+        <span className="truncate max-w-[200px]">{row.poly_label}</span>
+      </div>
+
+      <div className="surface rounded-2xl p-5 sm:p-6 mb-5">
+        <div className="flex items-start gap-4">
+          <EventIcon src={row.event_icon || null} alt={row.poly_event} size={52} className="shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-(--text-primary) leading-snug mb-1">{row.poly_event}</h1>
+            <p className="text-(--text-secondary) text-sm mb-3">{row.poly_label}</p>
+            <div className="flex items-center gap-4 flex-wrap">
+              <a href={row.poly_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-[#1652F0] dark:text-[#5b8df8] hover:opacity-70">
+                <PolymarketLogo size={14} /> Polymarket <ExternalLink className="w-3 h-3" />
+              </a>
+              <a href={row.kalshi_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-(--kalshi-teal) hover:opacity-70">
+                <KalshiLogo size={14} /> Kalshi <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p className="text-sm text-(--text-secondary) mb-5">
+        No arbitrage gap on this market right now: buying opposite sides on the two venues costs $1 or more.
+      </p>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <StatBox label="Kalshi YES" value={c(row.kalshi_yes_ask)} sub={`NO ${c(row.kalshi_no_ask)}`} />
+        <StatBox label="Poly YES" value={c(row.poly_yes_ask)} sub={`NO ${c(row.poly_no_ask)}`} />
+        <StatBox label="Resolves" value={fmtDate(row.poly_end_date)} sub={row.kalshi_end_date && row.kalshi_end_date !== row.poly_end_date ? `Kalshi: ${fmtDate(row.kalshi_end_date)}` : undefined} />
+        <StatBox label="Match Score" value={`${Math.round(row.outcome_score * 100)}%`} sub={`Event: ${Math.round(row.event_score * 100)}%`} />
+      </div>
+
+      <div className="space-y-5 mb-5">
+        <PriceChart pairId={pairId} />
+        <WatchPanel pairId={pairId} />
+      </div>
+
+      {eventId && (
+        <Link href={`/events/${encodeURIComponent(eventId)}`} className="surface rounded-xl px-4 py-3.5 flex items-center gap-3 mb-5 hover:bg-(--surface-hover)">
+          <EventIcon src={row.event_icon || null} alt={row.poly_event} size={32} className="shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-(--text-muted) mb-0.5">Parent event</p>
+            <p className="text-sm text-(--text-primary) font-medium truncate">{row.poly_event}</p>
+          </div>
+          <ArrowUpRight className="w-3.5 h-3.5 text-(--text-secondary)" />
+        </Link>
+      )}
+
+      <p className="text-(--text-muted) text-[10px] leading-relaxed">Prices are from the last hourly snapshot. Not financial advice.</p>
     </div>
   );
 }

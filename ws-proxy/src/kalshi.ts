@@ -20,6 +20,15 @@ function best(levels: Map<number, number>): [number, number] | null {
   return top;
 }
 
+export interface KalshiTrade {
+  id: string;
+  ticker: string;
+  side: "YES" | "NO"; // outcome the taker bought
+  price: number;      // dollars per contract on that side
+  count: number;      // contracts
+  ts: number;         // ms
+}
+
 export function loadKalshiKey(pem: string): crypto.KeyObject | null {
   if (!pem) return null;
   pem = pem.replace(/\\n/g, "\n");
@@ -40,6 +49,7 @@ export function loadKalshiKey(pem: string): crypto.KeyObject | null {
  * Maintains Kalshi order books from the orderbook_delta channel and emits
  * ("quote", ticker, Quote) whenever a market's top of book changes.
  * Kalshi books only hold bids: the YES ask is 1 - best NO bid and vice versa.
+ * Also emits ("trade", KalshiTrade) for every public trade on the subscribed markets.
  */
 export class KalshiFeed extends EventEmitter {
   private ws: WebSocket | null = null;
@@ -105,7 +115,7 @@ export class KalshiFeed extends EventEmitter {
           JSON.stringify({
             id: i / SUBSCRIBE_BATCH + 1,
             cmd: "subscribe",
-            params: { channels: ["orderbook_delta"], market_tickers: this.tickers.slice(i, i + SUBSCRIBE_BATCH) },
+            params: { channels: ["orderbook_delta", "trade"], market_tickers: this.tickers.slice(i, i + SUBSCRIBE_BATCH) },
           })
         );
       }
@@ -129,6 +139,20 @@ export class KalshiFeed extends EventEmitter {
     }
     if (msg.type === "error") {
       console.error("kalshi error:", JSON.stringify(msg.msg));
+      return;
+    }
+    if (msg.type === "trade") {
+      const t = msg.msg;
+      const side = (t.taker_outcome_side ?? t.taker_side) === "no" ? "NO" : "YES";
+      const trade: KalshiTrade = {
+        id: t.trade_id,
+        ticker: t.market_ticker,
+        side,
+        price: parseFloat(side === "YES" ? t.yes_price_dollars : t.no_price_dollars),
+        count: parseFloat(t.count_fp),
+        ts: t.ts_ms ?? t.ts * 1000,
+      };
+      if (Number.isFinite(trade.price) && Number.isFinite(trade.count)) this.emit("trade", trade);
       return;
     }
     if (msg.type !== "orderbook_snapshot" && msg.type !== "orderbook_delta") return;

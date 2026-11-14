@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import type { WhaleTrade } from "@/lib/whale";
+import Link from "next/link";
 import WhaleTabs from "@/components/WhaleTabs";
+import { PolymarketLogo, KalshiLogo } from "@/components/PlatformLogos";
 
 function timeAgo(ts: number): string {
   const diff = Math.floor(Date.now() / 1000) - ts;
@@ -69,7 +71,8 @@ export default function WhalePage() {
           </span>
         </div>
         <p className="text-(--text-secondary) text-sm mt-1">
-          Large trades on Polymarket — ${(threshold / 1000).toFixed(0)}K+ per transaction, across the top 25 markets by volume.
+          Large trades on Polymarket (${(threshold / 1000).toFixed(0)}K+ across the top 25 markets by volume) and on Kalshi
+          ($1K+ across markets listed on both venues).
         </p>
         {lastUpdated && (
           <p className="text-(--text-muted) text-xs mt-1">
@@ -108,9 +111,12 @@ export default function WhalePage() {
             </thead>
             <tbody>
               {trades.map((t) => {
-                const polyUrl = t.marketSlug
-                  ? `https://polymarket.com/event/${t.marketSlug}`
-                  : `https://polymarket.com`;
+                const isKalshi = t.venue === "kalshi";
+                const polyUrl = isKalshi
+                  ? t.marketUrl ?? "https://kalshi.com"
+                  : t.marketSlug
+                    ? `https://polymarket.com/event/${t.marketSlug}`
+                    : `https://polymarket.com`;
                 return (
                   <tr
                     key={t.id}
@@ -127,6 +133,9 @@ export default function WhalePage() {
                         className="text-(--text-primary) font-medium truncate block hover:text-[#00B3A1] transition-colors"
                         title={t.marketTitle}
                       >
+                        <span className="inline-flex items-center gap-1.5 align-middle mr-1.5" aria-label={isKalshi ? "Kalshi" : "Polymarket"}>
+                          {isKalshi ? <KalshiLogo size={12} /> : <PolymarketLogo size={12} />}
+                        </span>
                         {t.marketTitle}
                       </a>
                     </td>
@@ -151,15 +160,15 @@ export default function WhalePage() {
                       {(t.price * 100).toFixed(1)}¢
                     </td>
                     <td className="px-3 py-3.5 text-right hidden lg:table-cell">
-                      {t.txHash ? (
-                        <a
-                          href={`https://polygonscan.com/tx/${t.txHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                      {isKalshi ? (
+                        <span className="text-xs text-(--text-muted)" title="Kalshi doesn't publish who traded">anonymous</span>
+                      ) : /^0x[0-9a-fA-F]{40}$/.test(t.traderAddress) ? (
+                        <Link
+                          href={`/whale/trader/${t.traderAddress}`}
                           className="font-mono text-xs text-(--text-muted) hover:text-[#00B3A1] transition-colors"
                         >
                           {shortAddr(t.traderAddress)}
-                        </a>
+                        </Link>
                       ) : (
                         <span className="font-mono text-xs text-(--text-muted)">{shortAddr(t.traderAddress)}</span>
                       )}
@@ -173,7 +182,7 @@ export default function WhalePage() {
       )}
 
       <p className="text-(--text-muted) text-xs mt-6 text-center">
-        Data sourced from Polymarket CLOB API. Refreshes every 30 seconds.
+        Polymarket trades from its public API; Kalshi trades from its live trade feed. Refreshes every 30 seconds.
       </p>
     </div>
   );

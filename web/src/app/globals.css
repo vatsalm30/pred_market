@@ -19,6 +19,8 @@
   --kalshi-soft:     oklch(65% 0.14 185);
   --arb-amber:       oklch(78% 0.16 70);
   --chart-bar:       #00A291; /* teal validated for the dark surface */
+  --chart-kalshi:    #00A291; /* Kalshi + Polymarket line pair, validated for the dark surface */
+  --chart-poly:      #5b8df8;
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -49,6 +51,8 @@
   --text-secondary:  oklch(42% 0.012 248);
   --text-muted:      oklch(60% 0.010 248);
   --chart-bar:       #00897B; /* teal validated for the light surface */
+  --chart-kalshi:    #00897B; /* Kalshi + Polymarket line pair, validated for the light surface */
+  --chart-poly:      #1652F0;
 }
 
 @theme inline {

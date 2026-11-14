@@ -49,6 +49,11 @@ export class Engine extends EventEmitter {
     return [...this.byTicker.keys()];
   }
 
+  pairForTicker(ticker: string): Pair | undefined {
+    const id = this.byTicker.get(ticker)?.[0];
+    return id ? this.pairs.get(id) : undefined;
+  }
+
   polyTokens(): string[] {
     return [...this.byToken.keys()];
   }

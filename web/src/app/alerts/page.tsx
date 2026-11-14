@@ -105,6 +105,25 @@ export default function AlertsPage() {
         </div>
       </section>
 
+      {/* ── Discord, email and watchlist ──────────────────── */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="grid md:grid-cols-3 gap-4">
+          {[
+            { title: "Discord", text: "Post new gaps, your watchlist alerts and a daily summary to any Discord channel with a webhook." },
+            { title: "Watchlist alerts", text: "Pick any matched market and get pinged when its odds move a set number of points or a gap opens." },
+            { title: "Daily digest", text: "One email each morning with the day's biggest movers and the best open gaps after fees." },
+          ].map((c) => (
+            <div key={c.title} className="surface rounded-2xl p-5">
+              <h2 className="text-sm font-semibold text-(--text-primary) mb-1">{c.title}</h2>
+              <p className="text-sm text-(--text-secondary)">{c.text}</p>
+            </div>
+          ))}
+        </div>
+        <a href="/dashboard#alerts" className="inline-flex items-center gap-1.5 mt-4 text-sm font-medium text-(--text-primary) hover:underline">
+          Set them up in your dashboard <ArrowRight className="w-4 h-4" />
+        </a>
+      </section>
+
       {/* ── Stat strip ───────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

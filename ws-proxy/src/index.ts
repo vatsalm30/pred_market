@@ -4,6 +4,8 @@ import { PolymarketFeed } from "./polymarket";
 import { loadPairs } from "./pairs";
 import { parseApiKeys, startServer } from "./server";
 import { Auth } from "./auth";
+import { Insights } from "./insights";
+import { Site } from "./site";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const PORT = parseInt(process.env.PORT ?? "8080");
@@ -22,6 +24,10 @@ const STREAM_VERIFY_URL = process.env.STREAM_VERIFY_URL ?? "";
 const STREAM_VERIFY_SECRET = process.env.STREAM_VERIFY_SECRET ?? "";
 const MIN_PROFIT_PCT = parseFloat(process.env.MIN_PROFIT_PCT ?? "0.5");
 const MIN_OUTCOME_SCORE = parseFloat(process.env.MIN_OUTCOME_SCORE ?? "0.8");
+// Kalshi trades at or above this many dollars show up in the website's whale tracker
+const KALSHI_WHALE_USD = parseFloat(process.env.KALSHI_WHALE_USD ?? "1000");
+// UTC hour the daily digest is sent
+const DAILY_HOUR_UTC = parseInt(process.env.DAILY_HOUR_UTC ?? "13");
 
 async function init() {
   const engine = new Engine({ minProfitPct: MIN_PROFIT_PCT, minOutcomeScore: MIN_OUTCOME_SCORE });
@@ -49,6 +55,12 @@ async function init() {
   console.log(`${API_KEYS.size} static API keys; subscriber keys ${STREAM_VERIFY_URL ? `via ${STREAM_VERIFY_URL}` : "disabled"}`);
   await refresh();
   setInterval(refresh, REFRESH_MS);
+
+  // Same site and secret as key verification: https://www.omnipred.com/api/stream
+  const site = new Site(STREAM_VERIFY_URL.replace(/\/verify$/, ""), STREAM_VERIFY_SECRET);
+  new Insights(engine, kalshi, site, { kalshiWhaleUsd: KALSHI_WHALE_USD, dailyHourUtc: DAILY_HOUR_UTC })
+    .start()
+    .catch((e) => console.error("insights failed to start:", e));
 }
 
 // Last line of defence: log and keep serving rather than dropping every client.

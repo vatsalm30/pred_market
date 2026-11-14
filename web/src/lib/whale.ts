@@ -3,6 +3,8 @@ import { db, TABLE, isLive, nowSec } from "./db";
 
 export interface WhaleTrade {
   id: string;
+  venue?: "polymarket" | "kalshi"; // missing on older items, which are all Polymarket
+  marketUrl?: string;
   marketTitle: string;
   marketSlug?: string;
   conditionId: string;

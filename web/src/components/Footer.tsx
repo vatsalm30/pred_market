@@ -38,6 +38,9 @@ export default function Footer() {
                 <li><Link href="/events" className="text-sm text-(--text-secondary) hover:text-(--text-primary) transition-colors">All Markets</Link></li>
                 <li><Link href="/arbitrage" className="text-sm text-(--text-secondary) hover:text-(--text-primary) transition-colors">Arbitrage Scanner</Link></li>
                 <li><Link href="/whale" className="text-sm text-(--text-secondary) hover:text-(--text-primary) transition-colors">Whale Tracker</Link></li>
+                <li><Link href="/movers" className="text-sm text-(--text-secondary) hover:text-(--text-primary) transition-colors">Biggest Movers</Link></li>
+                <li><Link href="/stats/gaps" className="text-sm text-(--text-secondary) hover:text-(--text-primary) transition-colors">Gap Stats</Link></li>
+                <li><Link href="/tools/arbitrage-calculator" className="text-sm text-(--text-secondary) hover:text-(--text-primary) transition-colors">Fee Calculator</Link></li>
               </ul>
             </div>
             <div>
@@ -48,6 +51,7 @@ export default function Footer() {
                     Telegram bot
                   </Link>
                 </li>
+                <li><Link href="/dashboard#alerts" className="text-sm text-(--text-secondary) hover:text-(--text-primary) transition-colors">Discord &amp; email</Link></li>
                 <li>
                   <a
                     href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "omnipred_bot"}`}

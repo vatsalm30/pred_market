@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ExternalLink, ArrowLeft, TrendingUp, Zap, ArrowUpRight } from "lucide-react";
 import {
-  fetchAllEvents, fetchMatchedMarkets, fetchArbitrageOpportunities,
+  fetchMatchedMarkets, fetchArbitrageOpportunities,
   type AllEvent, type GroupedMarket, type ArbitrageOpportunity,
   formatVolume,
 } from "@/lib/csv";
 import { PolymarketLogo, KalshiLogo } from "@/components/PlatformLogos";
 import EventIcon from "@/components/EventIcon";
+import { shardOf } from "@/lib/shard";
 
 function fmtDate(d?: string | null): string {
   if (!d) return "—";
@@ -175,6 +176,11 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
             );
           })}
         </div>
+        <div className="px-5 pb-4">
+          <Link href={`/arb/${encodeURIComponent(String(o.kalshi_market_id))}`} className="text-xs text-(--text-secondary) hover:text-(--text-primary) underline">
+            Price history and alerts →
+          </Link>
+        </div>
       </div>
     );
   }
@@ -221,7 +227,11 @@ function OddsSection({ event, matched }: { event: AllEvent; matched: GroupedMark
                 : "text-(--text-muted)";
               return (
                 <tr key={i} className="border-b border-(--border-subtle) last:border-0 hover:bg-(--surface-hover) transition-colors">
-                  <td className="px-5 py-2.5 text-(--text-secondary) text-sm">{o.poly_label}</td>
+                  <td className="px-5 py-2.5 text-(--text-secondary) text-sm">
+                    <Link href={`/arb/${encodeURIComponent(String(o.kalshi_market_id))}`} className="hover:text-(--text-primary) hover:underline" title="Price history and alerts">
+                      {o.poly_label}
+                    </Link>
+                  </td>
                   <td className="px-4 py-2.5 text-right">
                     <span className="text-[#1652F0] dark:text-[#5b8df8] font-mono text-xs font-medium">{pct(polyYes)}</span>
                   </td>
@@ -302,11 +312,12 @@ export default function EventDetailClient({ slug }: { slug: string }) {
 
   useEffect(() => {
     Promise.all([
-      fetchAllEvents(),
+      // This event's ~170 KB shard rather than the full 11 MB event dump
+      fetch(`/data/derived/events-full/${shardOf(decodedSlug)}.json`).then((r) => (r.ok ? r.json() : {})) as Promise<Record<string, AllEvent>>,
       fetchMatchedMarkets(),
       fetchArbitrageOpportunities(),
-    ]).then(([allEvents, matchedMarkets, arb]) => {
-      const found = allEvents.find((e) => e.id === decodedSlug);
+    ]).then(([shard, matchedMarkets, arb]) => {
+      const found = shard[decodedSlug];
       setEvent(found ?? null);
 
       if (found) {

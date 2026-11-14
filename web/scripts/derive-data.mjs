@@ -6,9 +6,9 @@ import path from "node:path";
 
 const DATA = path.join(process.cwd(), "public", "data");
 const OUT = path.join(DATA, "derived");
-const SHARDS = 64; // keep in sync with src/lib/staticData.ts
+const SHARDS = 64; // keep in sync with src/lib/shard.ts
 
-// Same hash as shardOf() in src/lib/staticData.ts
+// Same hash as shardOf() in src/lib/shard.ts
 const shardOf = (id) => {
   let h = 5381;
   for (let i = 0; i < id.length; i++) h = ((h * 33) ^ id.charCodeAt(i)) >>> 0;
@@ -19,7 +19,7 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), "utf8"));
 const write = (f, v) => fs.writeFileSync(path.join(OUT, f), JSON.stringify(v));
 
 fs.rmSync(OUT, { recursive: true, force: true });
-fs.mkdirSync(path.join(OUT, "events"), { recursive: true });
+for (const dir of ["events", "events-full", "pairs"]) fs.mkdirSync(path.join(OUT, dir), { recursive: true });
 
 const events = read("all_events.json");
 const matched = read("matched_markets.json");
@@ -44,18 +44,27 @@ for (const e of events) {
 }
 shards.forEach((s, i) => write(`events/${i}.json`, s));
 
-const arbMeta = {};
-for (const o of arbs) {
-  arbMeta[o.kalshi_market_id] ??= {
-    poly_label: o.poly_label,
-    poly_event: o.poly_event,
-    net_profit_pct: o.net_profit_pct,
-    kalshi_leg: o.kalshi_leg,
-    poly_leg: o.poly_leg,
-    kalshi_ask: o.kalshi_ask,
-    poly_ask: o.poly_ask,
-  };
-}
-write("arbs.json", arbMeta);
+// Full event objects, so an event page loads ~170 KB instead of the whole dump
+const fullShards = Array.from({ length: SHARDS }, () => ({}));
+for (const e of events) fullShards[shardOf(e.id)][e.id] = e;
+fullShards.forEach((s, i) => write(`events-full/${i}.json`, s));
 
-console.log(`derive-data: ${events.length} events in ${SHARDS} shards, ${Object.keys(arbMeta).length} arbs`);
+// Everything about one Kalshi market: its matched rows, any open arbs and the parent event's id,
+// keyed by Kalshi ticker
+const eventIdByTitle = new Map(events.map((e) => [e.title, e.id]));
+const pairShards = Array.from({ length: SHARDS }, () => ({}));
+const entry = (id, event) =>
+  (pairShards[shardOf(id)][id] ??= { matched: [], arbs: [], event_id: eventIdByTitle.get(event) ?? null });
+for (const r of matched) entry(r.kalshi_market_id, r.poly_event).matched.push(r);
+for (const o of arbs) entry(o.kalshi_market_id, o.poly_event).arbs.push(o);
+pairShards.forEach((s, i) => write(`pairs/${i}.json`, s));
+
+// Compact labels for every pair ("<kalshi ticker>:<poly id>", as the stream names them)
+const pairsLite = {};
+for (const r of matched) {
+  pairsLite[`${r.kalshi_market_id}:${r.poly_market_id}`] = [r.poly_event, r.poly_label, r.kalshi_market_id, r.event_icon ?? null];
+}
+write("pairs-lite.json", pairsLite);
+
+
+console.log(`derive-data: ${events.length} events, ${matched.length} pairs, ${arbs.length} arbs in ${SHARDS} shards`);

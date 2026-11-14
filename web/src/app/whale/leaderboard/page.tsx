@@ -97,10 +97,8 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
                 <tr key={r.address} className="border-b border-(--border-subtle) last:border-0 hover:bg-(--surface-hover) transition-colors">
                   <td className="px-3 py-3 text-(--text-muted) tabular-nums">{r.rank}</td>
                   <td className="px-3 py-3 max-w-[220px] sm:max-w-none">
-                    <a
-                      href={`https://polymarket.com/profile/${r.address}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Link
+                      href={`/whale/trader/${r.address}`}
                       className="inline-flex items-center gap-2 text-(--text-primary) font-medium hover:text-[#00B3A1] transition-colors"
                     >
                       {r.image ? (
@@ -112,7 +110,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
                         </span>
                       )}
                       <span className="truncate">{r.name}</span>
-                    </a>
+                    </Link>
                     {r.xUsername && <span className="ml-2 text-xs text-(--text-muted)">@{r.xUsername}</span>}
                   </td>
                   <td className={`px-3 py-3 text-right font-mono font-semibold tabular-nums whitespace-nowrap ${r.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>

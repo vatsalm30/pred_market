@@ -4,6 +4,7 @@ import { PolymarketLogo, KalshiLogo, TelegramLogo, TelegramPlaneIcon } from "@/c
 import { formatVolume } from "@/lib/csv";
 import { getRecentWhales, type WhaleTrade } from "@/lib/whale";
 import { getHomeStats as readHomeStats } from "@/lib/staticData";
+import MoversList from "@/components/MoversList";
 
 export const revalidate = 3600;
 
@@ -163,6 +164,19 @@ export default async function HomePage() {
           </Link>{" "}
           pings you the moment new ones appear.
         </p>
+      </section>
+
+      {/* ── Biggest movers ──────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+        <div className="animate-in flex items-center justify-between mb-5">
+          <h2 className="text-xl font-semibold text-(--text-primary)">Biggest movers today</h2>
+          <Link href="/movers" className="link-arrow text-sm text-(--text-secondary) hover:text-(--text-primary) flex items-center gap-1">
+            See all <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+        <div className="max-w-3xl">
+          <MoversList limit={5} compact />
+        </div>
       </section>
 
       {/* ── Preview table ─────────────────────────────────── */}

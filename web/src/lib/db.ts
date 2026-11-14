@@ -13,6 +13,9 @@ import { DynamoDBDocumentClient, PutCommand, QueryCommand } from "@aws-sdk/lib-d
 //   apikey, apisub, apireveal, userkey#<userId>   data stream API keys (apikeys.ts)
 //   user, userlogin#<provider>, useremail       accounts (users.ts)
 //   usage#<label> / <date>, live / <label>      stream usage reported by ws-proxy (usage.ts)
+//   hist#<pairId>, snap, arbstats               price history, movers and gap stats (insights.ts)
+//   alertcfg, watchrule                         Discord / digest settings and watchlists (alerts.ts)
+//   daily / <date>                              marks the daily digest as sent
 //
 // Credentials use OMNIPRED_-prefixed names because some hosts reserve AWS_*.
 
