@@ -46,3 +46,7 @@ next-env.d.ts
 /.wrangler/
 .dev.vars*
 /public/data/derived/
+
+# market data: published by the GCP pipeline to the `data` branch (npm run data:pull)
+/public/data/*.json
+/public/sitemap.xml

@@ -10,7 +10,8 @@
     "prebuild": "node scripts/derive-data.mjs && node scripts/og-images.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "data:pull": "scripts/pull-data.sh"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1162.0",

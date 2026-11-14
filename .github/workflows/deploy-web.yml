@@ -1,14 +1,17 @@
 # Builds the site and deploys it to Cloudflare Workers.
-# Data refresh commits carry [skip ci], so an hourly run (after the :30 pipeline)
-# picks up fresh market data; code changes under web/ deploy on push.
+# Market data lives on the `data` branch (one commit, replaced by the GCP pipeline each run);
+# the pipeline sends a `data-updated` dispatch when it publishes, and code changes under web/
+# deploy on push. The schedule is a fallback in case a dispatch is missed.
 name: Deploy web
 
 on:
   push:
     branches: [main]
     paths: ["web/**", ".github/workflows/deploy-web.yml"]
+  repository_dispatch:
+    types: [data-updated]
   schedule:
-    - cron: "50 * * * *"
+    - cron: "15 */6 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -24,6 +27,9 @@ jobs:
         working-directory: web
     steps:
       - uses: actions/checkout@v4
+      - name: Use the latest market data
+        working-directory: .
+        run: web/scripts/pull-data.sh
       - uses: actions/setup-node@v4
         with:
           node-version: 24
