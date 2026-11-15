@@ -5,7 +5,8 @@
 # Secrets are read from env on the first run (or to rotate them):
 #   GITHUB_TOKEN           fine-grained PAT, Contents read/write on the repo
 #   KALSHI_API_KEY
-#   ANTHROPIC_API_KEY      Claude key for verify_pairs.py (LLM check of matched pairs)
+#   ANTHROPIC_API_KEY      Claude key for verify_pairs.py and generate_content.py
+#   CONTENT_SECRET         the site's CRON_SECRET, authorizes POST /api/content
 #   AWS_ACCESS_KEY_ID      keys for the omnipred-gcp-pipeline IAM user (aws/)
 #   AWS_SECRET_ACCESS_KEY
 # Optional env: GCP_REGION (default us-central1), SITE_URL,
@@ -52,7 +53,7 @@ gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" \
 
 for pair in github-token:GITHUB_TOKEN kalshi-api-key:KALSHI_API_KEY \
             aws-access-key-id:AWS_ACCESS_KEY_ID aws-secret-access-key:AWS_SECRET_ACCESS_KEY \
-            anthropic-api-key:ANTHROPIC_API_KEY; do
+            anthropic-api-key:ANTHROPIC_API_KEY content-secret:CONTENT_SECRET; do
   name=${pair%%:*}; var=${pair#*:}
   if ! gcloud secrets describe "$name" >/dev/null 2>&1; then
     : "${!var:?set $var for the first deploy}"
@@ -69,7 +70,8 @@ done
 # ── Jobs + schedules ──────────────────────────────────────────────────────
 # mode|cron|cpu|memory. Price refreshes are just HTTP + pandas, so they run
 # small to keep the hourly runs well inside the free vCPU/GiB-seconds.
-for spec in "prices|30 * * * *|1|1Gi" "full|0 2,14 * * *|2|4Gi"; do
+# "content" writes the daily news and blog posts at 13:00, 17:00 and 21:00 UTC
+for spec in "prices|30 * * * *|1|1Gi" "full|0 2,14 * * *|2|4Gi" "content|0 13,17,21 * * *|1|1Gi"; do
   IFS='|' read -r mode cron cpu memory <<< "$spec"
   job="omnipred-pipeline-$mode"
 
@@ -81,7 +83,7 @@ for spec in "prices|30 * * * *|1|1Gi" "full|0 2,14 * * *|2|4Gi"; do
     --task-timeout 3600 --max-retries 0 \
     --service-account "$JOB_SA" \
     --set-env-vars "STATE_BUCKET=$BUCKET,GITHUB_REPO=vatsalm30/pred_market,DYNAMODB_TABLE=omnipred,AWS_DEFAULT_REGION=us-east-1,SITE_URL=${SITE_URL:-https://www.omnipred.com}" \
-    --set-secrets "GITHUB_TOKEN=github-token:latest,KALSHI_API_KEY=kalshi-api-key:latest,AWS_ACCESS_KEY_ID=aws-access-key-id:latest,AWS_SECRET_ACCESS_KEY=aws-secret-access-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest"
+    --set-secrets "GITHUB_TOKEN=github-token:latest,KALSHI_API_KEY=kalshi-api-key:latest,AWS_ACCESS_KEY_ID=aws-access-key-id:latest,AWS_SECRET_ACCESS_KEY=aws-secret-access-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,CONTENT_SECRET=content-secret:latest"
 
   gcloud run jobs add-iam-policy-binding "$job" --region "$REGION" \
     --member "serviceAccount:$SCHED_SA" --role roles/run.invoker >/dev/null

@@ -143,29 +143,7 @@ Resources:
         Input: '{"path": "/api/whale/track"}'
         RetryPolicy: { MaximumRetryAttempts: 0 }
 
-  BlogGenerateSchedule:
-    Type: AWS::Scheduler::Schedule
-    Properties:
-      Name: omnipred-blog-generate
-      ScheduleExpression: cron(0 8 * * ? *)
-      FlexibleTimeWindow: { Mode: "OFF" }
-      Target:
-        Arn: !GetAtt PingFunction.Arn
-        RoleArn: !GetAtt SchedulerRole.Arn
-        Input: '{"path": "/api/blog/generate"}'
-        RetryPolicy: { MaximumRetryAttempts: 2 }
 
-  NewsGenerateSchedule:
-    Type: AWS::Scheduler::Schedule
-    Properties:
-      Name: omnipred-news-generate
-      ScheduleExpression: cron(0 13,21 * * ? *)
-      FlexibleTimeWindow: { Mode: "OFF" }
-      Target:
-        Arn: !GetAtt PingFunction.Arn
-        RoleArn: !GetAtt SchedulerRole.Arn
-        Input: '{"path": "/api/news/generate"}'
-        RetryPolicy: { MaximumRetryAttempts: 0 }
 
 Outputs:
   TableName:

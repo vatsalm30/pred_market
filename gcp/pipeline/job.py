@@ -1,6 +1,6 @@
 """Cloud Run Job entry point for the data pipeline.
 
-Usage: job.py prices | job.py full
+Usage: job.py prices | job.py full | job.py content
 
 The pipeline scripts use relative paths, so each run copies them into a
 scratch dir. matched_markets.csv persists between runs in GCS. The JSON output
@@ -20,6 +20,11 @@ STATE_FILES = ["matched_markets.csv", "pair_verdicts.json"]
 
 
 def main(mode):
+    if mode == "content":
+        # 3 news + 3 blog posts a day (one of each per run); needs no pipeline state
+        os.chdir(APP_DIR)
+        sys.exit(subprocess.run([sys.executable, "generate_content.py"]).returncode)
+
     bucket = storage.Client().bucket(os.environ["STATE_BUCKET"])
     shutil.rmtree(WORK, ignore_errors=True)
     os.makedirs(os.path.join(WORK, "web", "public", "data"))
